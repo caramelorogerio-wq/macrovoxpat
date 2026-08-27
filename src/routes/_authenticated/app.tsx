@@ -37,13 +37,13 @@ import {
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
     meta: [
-      { title: "Consultório — DermaVoz" },
+      { title: "Consultório — Patologia Geral" },
       {
         name: "description",
         content:
           "Grave a voz, transcreva em português europeu e guarde os relatórios associados aos seus doentes, em privado.",
       },
-      { property: "og:title", content: "Consultório — DermaVoz" },
+      { property: "og:title", content: "Consultório — Patologia Geral" },
       {
         property: "og:description",
         content:
@@ -679,7 +679,7 @@ Código de faturação: ${codigoFaturacao}
 
           <div>
             <h1 className="text-xl font-semibold text-primary-foreground">
-              DermaVoz
+              Patologia Geral
             </h1>
 
             <p className="text-sm text-primary-foreground/75">
