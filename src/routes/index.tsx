@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DermaVoz — Ditado clínico e transcrição em pt-PT" },
+      { title: "Patologia Geral — Ditado clínico e transcrição em pt-PT" },
       {
         name: "description",
         content:
-          "Grave a voz, obtenha a transcrição em português europeu com terminologia dermatopatológica e otimize o relatório com IA. Cada médico vê apenas os seus dados.",
+          "Grave a voz, obtenha a transcrição em português europeu com terminologia macroscópica e otimize o relatório com IA. Cada médico vê apenas os seus dados.",
       },
-      { property: "og:title", content: "DermaVoz — Ditado clínico em português europeu" },
+      { property: "og:title", content: "Patologia Geral — Ditado clínico em português europeu" },
       {
         property: "og:description",
         content:
-          "Transcrição de voz para texto com vocabulário de dermatopatologia, revisão automática por IA e arquivo privado por médico.",
+          "Transcrição de voz para texto com vocabulário de macroscopia em patologia geral, revisão automática por IA e arquivo privado por médico.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -33,7 +33,7 @@ function Landing() {
           <span className="flex size-10 items-center justify-center rounded-md bg-clinical text-clinical-foreground">
             <Mic className="size-5" />
           </span>
-          <h1 className="text-xl font-semibold text-primary-foreground">DermaVoz</h1>
+          <h1 className="text-xl font-semibold text-primary-foreground">Patologia Geral</h1>
           <Link to="/auth" className="ml-auto">
             <Button variant="secondary" size="sm">
               Entrar
@@ -47,7 +47,7 @@ function Landing() {
           Da voz ao texto clínico, em português europeu.
         </h2>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Dite o exame, obtenha a transcrição com terminologia dermatopatológica correcta e exporte
+          Dite o exame, obtenha a transcrição com terminologia macroscópica correcta e exporte
           o texto. Os relatórios ficam guardados em privado na conta de cada médico.
         </p>
 
@@ -65,7 +65,7 @@ function Landing() {
             <Mic className="size-5 text-primary" />
             <h3 className="mt-3 font-semibold text-foreground">Ditado fiel</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Reconhecimento de voz orientado por vocabulário de dermatopatologia.
+              Reconhecimento de voz orientado por vocabulário de macroscopia em patologia geral.
             </p>
           </article>
           <article className="panel p-5">

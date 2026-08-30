@@ -232,8 +232,8 @@ export async function gerarRelatorioDocx({
   texto,
   resumo,
   template = "clinico",
-  instituicao = "DermaVoz",
-  servico = "Serviço de Dermatopatologia",
+  instituicao = "Patologia Geral",
+  servico = "Serviço de Anatomia Patológica",
   medico,
 }: RelatorioDocx): Promise<Blob> {
   const titulo = numeroAnalise || "Relatório";

@@ -61,8 +61,8 @@ const resumoTexto = (a: Amostra) =>
 export const gerarORU = ({
   numeroAnalise,
   amostras,
-  instituicao = "DermaVoz",
-  servico = "Serviço de Dermatopatologia",
+  instituicao = "Patologia Geral",
+  servico = "Serviço de Anatomia Patológica",
   medico,
   data = new Date(),
 }: DadosHL7): string => {
@@ -176,8 +176,8 @@ export const gerarORU = ({
 export const gerarBundleFhir = ({
   numeroAnalise,
   amostras,
-  instituicao = "DermaVoz",
-  servico = "Serviço de Dermatopatologia",
+  instituicao = "Patologia Geral",
+  servico = "Serviço de Anatomia Patológica",
   medico,
   data = new Date(),
 }: DadosHL7) => {
@@ -239,7 +239,7 @@ export const gerarBundleFhir = ({
           conclusion: a.texto.trim(),
           extension: [
             {
-              url: "urn:dermavoz:codigo-facturacao",
+              url: "urn:patologia-geral:codigo-facturacao",
               valueString: a.resumo.codigoFaturacao,
             },
           ],

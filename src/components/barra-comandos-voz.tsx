@@ -49,7 +49,7 @@ export function BarraComandosVoz({
 
           <p className="mt-1 text-sm text-muted-foreground">
             Diga <strong>&quot;App&quot;</strong> seguido do comando — por
-            exemplo, &quot;App, iniciar gravação&quot;. (&quot;DermaVoz&quot;
+            exemplo, &quot;App, iniciar gravação&quot;. (&quot;Patologia Geral&quot;
             também continua a funcionar.)
           </p>
         </div>

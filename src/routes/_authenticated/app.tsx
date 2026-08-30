@@ -58,13 +58,13 @@ import {
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
     meta: [
-      { title: "Consultório — DermaVoz" },
+      { title: "Consultório — Patologia Geral" },
       {
         name: "description",
         content:
           "Grave a voz, transcreva em português europeu e guarde os relatórios associados aos seus doentes, em privado.",
       },
-      { property: "og:title", content: "Consultório — DermaVoz" },
+      { property: "og:title", content: "Consultório — Patologia Geral" },
       {
         property: "og:description",
         content:
@@ -198,14 +198,14 @@ function AppPage() {
   const [template, setTemplate] =
     useState<TemplateDocx>("clinico");
 
-  const [instituicao, setInstituicao] = useState("DermaVoz");
+  const [instituicao, setInstituicao] = useState("Patologia Geral");
 
   const [servico, setServico] = useState(
-    "Serviço de Dermatopatologia",
+    "Serviço de Anatomia Patológica",
   );
 
   useEffect(() => {
-    const guardado = localStorage.getItem("dermavoz:modelo-docx");
+    const guardado = localStorage.getItem("patologia-geral:modelo-docx");
 
     if (!guardado) return;
 
@@ -226,7 +226,7 @@ function AppPage() {
 
   useEffect(() => {
     localStorage.setItem(
-      "dermavoz:modelo-docx",
+      "patologia-geral:modelo-docx",
       JSON.stringify({ template, instituicao, servico }),
     );
   }, [template, instituicao, servico]);
@@ -732,9 +732,9 @@ function AppPage() {
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
         template,
-        instituicao: instituicao.trim() || "DermaVoz",
+        instituicao: instituicao.trim() || "Patologia Geral",
         servico:
-          servico.trim() || "Serviço de Dermatopatologia",
+          servico.trim() || "Serviço de Anatomia Patológica",
         amostras: usaveis.map((a, i) => ({
           titulo: a.titulo.trim() || `Amostra ${i + 1}`,
           texto: a.texto.trim(),
@@ -1068,7 +1068,7 @@ function AppPage() {
 
           <div>
             <h1 className="text-xl font-semibold text-primary-foreground">
-              DermaVoz
+              Patologia Geral
             </h1>
 
             <p className="text-sm text-primary-foreground/75">
