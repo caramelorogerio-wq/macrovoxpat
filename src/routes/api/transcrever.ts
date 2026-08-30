@@ -7,6 +7,7 @@ import { mimeFor, VOCABULARIO, gatewayError } from "@/lib/ai-clinico";
 const bodySchema = z.object({
   audioBase64: z.string().min(10),
   format: z.enum(["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"]),
+  pistas: z.string().max(1200).optional(),
 });
 
 const MAX_BASE64 = 30 * 1024 * 1024; // ~22 MB de áudio
