@@ -1,11 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Mic, Square, Loader2, Upload, FileAudio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   disabled: boolean;
   onAudio: (file: Blob, format: string) => void;
+  /** Notifica o estado da gravação (usado pelos comandos de voz). */
+  onEstadoChange?: (aGravar: boolean) => void;
 };
+
+/** Controlo imperativo usado pelos comandos de voz. */
+export type RecorderHandle = {
+  /** Devolve true quando a gravação arrancou mesmo. */
+  iniciar: () => Promise<boolean>;
+  parar: () => boolean;
+  aGravar: () => boolean;
+  /** Última mensagem de erro do gravador, se existir. */
+  erro: () => string | null;
+};
+
+
+
 
 const formatFromMime = (mime: string) => {
   if (mime.includes("webm")) return "webm";
@@ -31,7 +46,8 @@ const escolherMimeType = () => {
   return candidatos.find((t) => MediaRecorder.isTypeSupported?.(t));
 };
 
-export function RecorderPanel({ disabled, onAudio }: Props) {
+export const RecorderPanel = forwardRef<RecorderHandle, Props>(
+  function RecorderPanel({ disabled, onAudio, onEstadoChange }, ref) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -39,6 +55,14 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gravandoRef = useRef(false);
+  const erroRef = useRef<string | null>(null);
+  erroRef.current = erro;
+
+
+  useEffect(() => {
+    onEstadoChange?.(recording);
+  }, [recording, onEstadoChange]);
 
   useEffect(() => {
     if (!recording) return;
@@ -46,16 +70,17 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
     return () => window.clearInterval(id);
   }, [recording]);
 
-  const iniciar = async () => {
+
+  const iniciar = async (): Promise<boolean> => {
     setErro(null);
 
     if (typeof window !== "undefined" && !window.isSecureContext) {
       setErro("A gravação exige uma ligação segura (https).");
-      return;
+      return false;
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setErro("Este navegador não suporta gravação de áudio. Use o Edge, Chrome ou Safari actualizado.");
-      return;
+      return false;
     }
 
     try {
@@ -68,6 +93,7 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       };
       recorder.onerror = () => {
         stream.getTracks().forEach((t) => t.stop());
+        gravandoRef.current = false;
         setRecording(false);
         setErro("A gravação foi interrompida pelo navegador. Tente novamente.");
       };
@@ -82,7 +108,9 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       recorder.start(1000);
       recorderRef.current = recorder;
       setSeconds(0);
+      gravandoRef.current = true;
       setRecording(true);
+      return true;
     } catch (e) {
       const nome = (e as DOMException | undefined)?.name;
       if (nome === "NotAllowedError" || nome === "SecurityError") {
@@ -96,14 +124,37 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       } else {
         setErro("Não foi possível aceder ao microfone. Verifique as permissões do navegador.");
       }
+      gravandoRef.current = false;
+      setRecording(false);
+      return false;
     }
   };
 
-  const parar = () => {
-    recorderRef.current?.stop();
+  const parar = (): boolean => {
+    if (!recorderRef.current) {
+      gravandoRef.current = false;
+      setRecording(false);
+      return false;
+    }
+    recorderRef.current.stop();
     recorderRef.current = null;
+    gravandoRef.current = false;
     setRecording(false);
+    return true;
   };
+
+  useImperativeHandle(ref, () => ({
+    iniciar: async () => {
+      if (gravandoRef.current) return true;
+      return iniciar();
+    },
+    parar: () => (gravandoRef.current ? parar() : false),
+    aGravar: () => gravandoRef.current,
+    erro: () => erroRef.current,
+  }));
+
+
+
 
   const escolherFicheiro = (file: File | undefined) => {
     if (!file) return;
@@ -209,4 +260,5 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       {erro && <p className="text-sm text-destructive">{erro}</p>}
     </div>
   );
-}
+});
+
