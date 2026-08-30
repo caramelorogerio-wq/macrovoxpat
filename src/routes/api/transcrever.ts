@@ -91,7 +91,12 @@ export const Route = createFileRoute("/api/transcrever")({
           `gravacao.${parsed.format}`,
         );
         form.append("language", "pt");
-        form.append("prompt", VOCABULARIO);
+        form.append(
+          "prompt",
+          parsed.pistas
+            ? `${VOCABULARIO} Termos frequentes deste médico: ${parsed.pistas}.`
+            : VOCABULARIO,
+        );
 
         const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
           method: "POST",
