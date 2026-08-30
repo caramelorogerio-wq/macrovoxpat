@@ -27,11 +27,11 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       throw new Error("Sessão não encontrada.");
     }
 
-    const apiUrl =
-      process.env["VITE_LOVABLE_API_URL"] ??
-      "https://digivoz.lovable.app";
+    // A transcrição corre nesta mesma aplicação: usa a origem do pedido para
+    // funcionar tanto no preview como na versão publicada.
+    const origin = new URL(request.url).origin;
 
-    const response = await fetch(`${apiUrl}/api/transcrever`, {
+    const response = await fetch(`${origin}/api/transcrever`, {
       method: "POST",
       headers: {
         Authorization: authorization,
@@ -40,6 +40,7 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       body: JSON.stringify({
         audioBase64: data.audioBase64,
         format: data.format,
+        ...(data.pistas ? { pistas: data.pistas } : {}),
       }),
     });
 
