@@ -717,11 +717,13 @@ function AppPage() {
   const apagar = async (
     id: string,
   ) => {
-    const { error } =
-      await supabase
+    const { error } = await comSessao(() =>
+      supabase
         .from("relatorios_transcritos")
         .delete()
-        .eq("id", id);
+        .eq("id", id),
+    );
+
 
     if (error) {
       toast.error(
