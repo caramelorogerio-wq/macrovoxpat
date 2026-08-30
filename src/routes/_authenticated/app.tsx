@@ -355,10 +355,13 @@ function AppPage() {
   };
 
   const removerTermo = async (termo: Termo) => {
-    const { error } = await supabase
-      .from("termos_aprendidos")
-      .update({ activo: false })
-      .eq("id", termo.id);
+    const { error } = await comSessao(() =>
+      supabase
+        .from("termos_aprendidos")
+        .update({ activo: false })
+        .eq("id", termo.id),
+    );
+
 
     if (error) {
       toast.error(
