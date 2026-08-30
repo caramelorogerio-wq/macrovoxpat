@@ -1,5 +1,5 @@
 /**
- * Reconhecimento de comandos de voz em pt-PT para o fluxo do DermaVoz.
+ * Reconhecimento de comandos de voz em pt-PT para o fluxo de Patologia Geral.
  *
  * Cada frase captada pelo navegador é normalizada (sem acentos, sem
  * pontuação) e comparada com os padrões abaixo. Só as frases iniciadas pela
@@ -175,12 +175,9 @@ const VARIANTES_ACTIVACAO = [
   "ap",
   "apo",
   "apps",
-  "dermavoz",
-  "derma voz",
-  "derma vos",
-  "dermavos",
-  "dermabos",
-  "derma boz",
+  "patologia geral",
+  "patologia",
+  "patologia geral app",
 ];
 
 /** Devolve o texto do comando quando a frase começa pela palavra de activação. */
