@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Mic,
   FileDown,
@@ -8,24 +8,44 @@ import {
   Copy,
   Save,
   LogOut,
-  UserPlus,
   Trash2,
   Sparkles,
   Loader2,
   Brain,
   Power,
+  SplitSquareVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RecorderPanel } from "@/components/recorder-panel";
-import { ResumoTecnico } from "@/components/resumo-tecnico";
+import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
+import { BarraComandosVoz } from "@/components/barra-comandos-voz";
+import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
+import {
+  COMANDOS_DESTRUTIVOS,
+  extrairComando,
+  interpretarComando,
+  type Comando,
+} from "@/lib/comandos-voz";
+
+import { ListaAmostras } from "@/components/lista-amostras";
+import { CampoAnalise } from "@/components/campo-analise";
+import { ModeloDocumento } from "@/components/modelo-documento";
+import { ExportarHL7 } from "@/components/exportar-hl7";
+import type { TemplateDocx } from "@/lib/relatorio-docx";
+import {
+  type Amostra,
+  type ResumoAmostra,
+  novaAmostra,
+  resumoVazio,
+  separarAmostrasHeuristica,
+  textoCompleto,
+  contarPalavras,
+} from "@/lib/amostras";
 import {
   transcribeAudio,
   optimizeReport,
+  splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -34,16 +54,17 @@ import {
   type ContextoAprendizagem,
 } from "@/lib/learning.functions";
 
+
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
     meta: [
-      { title: "Consultório — Patologia Geral" },
+      { title: "Consultório — DermaVoz" },
       {
         name: "description",
         content:
           "Grave a voz, transcreva em português europeu e guarde os relatórios associados aos seus doentes, em privado.",
       },
-      { property: "og:title", content: "Consultório — Patologia Geral" },
+      { property: "og:title", content: "Consultório — DermaVoz" },
       {
         property: "og:description",
         content:
@@ -56,11 +77,6 @@ export const Route = createFileRoute("/_authenticated/app")({
   component: AppPage,
 });
 
-type Paciente = {
-  id: string;
-  nome: string;
-  numero_processo: string | null;
-};
 
 type Relatorio = {
   id: string;
@@ -68,12 +84,14 @@ type Relatorio = {
   texto: string;
   created_at: string;
   paciente_id: string | null;
+  amostras: unknown;
   fragmentos: number;
   blocos: number;
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
 };
+
 
 type Termo = {
   id: string;
@@ -103,20 +121,21 @@ function AppPage() {
 
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
+  const separarIA = useServerFn(splitSamples);
   const carregarVocabulario = useServerFn(getVocabularioPessoal);
   const guardarCorreccoes = useServerFn(registarCorreccoes);
 
   const [aTranscrever, setATranscrever] = useState(false);
   const [aOtimizar, setAOtimizar] = useState(false);
+  const [aSeparar, setASeparar] = useState(false);
 
-  const [texto, setTexto] = useState("");
-  const [titulo, setTitulo] = useState("");
+  const [amostras, setAmostras] = useState<Amostra[]>(() => [
+    novaAmostra(),
+  ]);
 
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [pacienteId, setPacienteId] = useState("");
+  const [activaId, setActivaId] = useState<string | null>(null);
 
-  const [novoPaciente, setNovoPaciente] = useState("");
-  const [novoProcesso, setNovoProcesso] = useState("");
+  const [numeroAnalise, setNumeroAnalise] = useState("");
 
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
@@ -130,24 +149,90 @@ function AppPage() {
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
 
-  const [fragmentos, setFragmentos] = useState(0);
-  const [blocos, setBlocos] = useState(0);
+  const amostraActiva =
+    amostras.find((a) => a.id === activaId) ?? amostras[0]!;
 
-  const [seccionado, setSeccionado] = useState(false);
+  /** Amostra fixada como destino no momento em que a gravação arranca. */
+  const alvoGravacaoRef = useRef<string | null>(null);
+  const amostrasRef = useRef(amostras);
+  amostrasRef.current = amostras;
 
-  const [inclusao, setInclusao] =
-    useState<"total" | "reserva">("total");
+  const texto = textoCompleto(amostras);
 
-  const [codigoFaturacao, setCodigoFaturacao] =
-    useState<"31057" | "31077">("31057");
+
+  const actualizarAmostra = (
+    id: string,
+    patch: Partial<Amostra>,
+  ) =>
+    setAmostras((lista) =>
+      lista.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    );
+
+  const adicionarAmostra = () => {
+    const nova = novaAmostra();
+    setAmostras((lista) => [...lista, nova]);
+    setActivaId(nova.id);
+  };
+
+  const removerAmostra = (id: string) =>
+    setAmostras((lista) =>
+      lista.length === 1
+        ? lista
+        : lista.filter((a) => a.id !== id),
+    );
+
+  const moverAmostra = (id: string, direccao: -1 | 1) =>
+    setAmostras((lista) => {
+      const i = lista.findIndex((a) => a.id === id);
+      const j = i + direccao;
+
+      if (i < 0 || j < 0 || j >= lista.length) return lista;
+
+      const copia = [...lista];
+      const [item] = copia.splice(i, 1);
+      copia.splice(j, 0, item!);
+      return copia;
+    });
+
+
+  const [template, setTemplate] =
+    useState<TemplateDocx>("clinico");
+
+  const [instituicao, setInstituicao] = useState("DermaVoz");
+
+  const [servico, setServico] = useState(
+    "Serviço de Dermatopatologia",
+  );
+
+  useEffect(() => {
+    const guardado = localStorage.getItem("dermavoz:modelo-docx");
+
+    if (!guardado) return;
+
+    try {
+      const p = JSON.parse(guardado) as {
+        template?: TemplateDocx;
+        instituicao?: string;
+        servico?: string;
+      };
+
+      if (p.template) setTemplate(p.template);
+      if (p.instituicao) setInstituicao(p.instituicao);
+      if (p.servico) setServico(p.servico);
+    } catch {
+      // preferência inválida: ignora
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "dermavoz:modelo-docx",
+      JSON.stringify({ template, instituicao, servico }),
+    );
+  }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
-    const [p, r, t, m] = await Promise.all([
-      supabase
-        .from("pacientes")
-        .select("id, nome, numero_processo")
-        .order("nome"),
-
+    const [r, t, m] = await Promise.all([
       supabase
         .from("relatorios_transcritos")
         .select(
@@ -166,9 +251,6 @@ function AppPage() {
       supabase.auth.getUser(),
     ]);
 
-    if (p.data) {
-      setPacientes(p.data);
-    }
 
     if (r.data) {
       setRelatorios(r.data as Relatorio[]);
@@ -332,15 +414,32 @@ function AppPage() {
         return;
       }
 
-      setTexto((atual) =>
-        atual
-          ? `${atual}\n\n${resultado.text}`
+      // A amostra fixada quando a gravação começou tem prioridade.
+      const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
+      alvoGravacaoRef.current = null;
+
+      const destino =
+        amostrasRef.current.find((a) => a.id === alvoId) ?? amostraActiva;
+
+      const alvo = destino.id;
+
+      actualizarAmostra(alvo, {
+        texto: destino.texto
+          ? `${destino.texto}\n\n${resultado.text}`
           : resultado.text,
-      );
+      });
+
+      setActivaId(alvo);
+
 
       toast.success(
         "Transcrição concluída.",
       );
+
+      if (/\bamostra\b/i.test(resultado.text)) {
+        void separarAmostras(alvo, resultado.text, true);
+      }
+
     } catch (e) {
       toast.error(
         e instanceof Error
@@ -349,6 +448,78 @@ function AppPage() {
       );
     } finally {
       setATranscrever(false);
+    }
+  };
+
+  const separarAmostras = async (
+    id: string,
+    conteudo: string,
+    automatico = false,
+  ) => {
+    if (!conteudo.trim()) {
+      if (!automatico) {
+        toast.error("Não há texto para separar.");
+      }
+      return;
+    }
+
+    setASeparar(true);
+
+    try {
+      let blocos: { titulo: string; texto: string }[] = [];
+
+      try {
+        const resultado = await separarIA({
+          data: { texto: conteudo },
+        });
+
+        blocos = resultado.amostras;
+      } catch {
+        blocos = [];
+      }
+
+      if (blocos.length === 0) {
+        blocos = separarAmostrasHeuristica(conteudo);
+      }
+
+      if (blocos.length <= 1) {
+        if (!automatico) {
+          toast.info(
+            "Não foram detetadas várias amostras neste ditado.",
+          );
+        }
+        return;
+      }
+
+      setAmostras((lista) => {
+        const indice = lista.findIndex((a) => a.id === id);
+
+        if (indice < 0) return lista;
+
+        const base = lista[indice]!;
+
+        const novas: Amostra[] = blocos.map((b, i) => ({
+          id: i === 0 ? base.id : `${base.id}-${i}`,
+          titulo: b.titulo || `Amostra ${i + 1}`,
+          texto: b.texto,
+          resumo:
+            i === 0
+              ? base.resumo
+              : { ...resumoVazio() },
+        }));
+
+        return [
+          ...lista.slice(0, indice),
+          ...novas,
+          ...lista.slice(indice + 1),
+        ];
+      });
+
+      toast.success(
+        `${blocos.length} amostras separadas. Reveja os títulos.`,
+      );
+    } finally {
+      setASeparar(false);
     }
   };
 
@@ -363,27 +534,30 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
-      const resultado = await otimizar({
-        data: {
-          texto,
+      const revistas = await Promise.all(
+        amostras.map(async (a) => {
+          if (!a.texto.trim()) return a;
 
-          exemplos:
-            contexto?.exemplos ?? [],
+          const resultado = await otimizar({
+            data: {
+              texto: a.texto,
 
-          correccoes:
-            contexto?.correccoes ?? [],
-        },
-      });
+              exemplos:
+                contexto?.exemplos ?? [],
 
-      if (!resultado.text) {
-        toast.error(
-          "A IA não devolveu texto revisto.",
-        );
-        return;
-      }
+              correccoes:
+                contexto?.correccoes ?? [],
+            },
+          });
 
-      setTextoOtimizado(resultado.text);
-      setTexto(resultado.text);
+          return resultado.text
+            ? { ...a, texto: resultado.text }
+            : a;
+        }),
+      );
+
+      setTextoOtimizado(textoCompleto(revistas));
+      setAmostras(revistas);
 
       toast.success(
         "Relatório otimizado. Reveja as alterações.",
@@ -399,52 +573,7 @@ function AppPage() {
     }
   };
 
-  const criarPaciente = async () => {
-    if (!novoPaciente.trim()) {
-      return;
-    }
 
-    const { data: sessao } =
-      await supabase.auth.getUser();
-
-    if (!sessao.user) {
-      return;
-    }
-
-    const { data, error } =
-      await supabase
-        .from("pacientes")
-        .insert({
-          medico_id: sessao.user.id,
-          nome: novoPaciente.trim(),
-          numero_processo:
-            novoProcesso.trim() || null,
-        })
-        .select(
-          "id, nome, numero_processo",
-        )
-        .single();
-
-    if (error || !data) {
-      toast.error(
-        "Não foi possível criar o doente.",
-      );
-      return;
-    }
-
-    setPacientes((a) => [
-      ...a,
-      data,
-    ]);
-
-    setPacienteId(data.id);
-    setNovoPaciente("");
-    setNovoProcesso("");
-
-    toast.success(
-      "Doente adicionado.",
-    );
-  };
 
   const guardar = async () => {
     if (!texto.trim()) {
@@ -466,23 +595,24 @@ function AppPage() {
         .from("relatorios_transcritos")
         .insert({
           medico_id: sessao.user.id,
-          paciente_id:
-            pacienteId || null,
+          paciente_id: null,
 
           titulo:
-            titulo.trim() ||
+            numeroAnalise.trim() ||
             `Relatório ${new Date().toLocaleDateString(
               "pt-PT",
             )}`,
 
           texto,
-          fragmentos,
-          blocos,
-          seccionado,
-          inclusao,
+          amostras,
+          fragmentos: amostraActiva.resumo.fragmentos,
+          blocos: amostraActiva.resumo.blocos,
+          seccionado: amostraActiva.resumo.seccionado,
+          inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
-            codigoFaturacao,
+            amostraActiva.resumo.codigoFaturacao,
         });
+
 
     if (error) {
       toast.error(
@@ -513,7 +643,6 @@ function AppPage() {
       "Relatório guardado na sua conta.",
     );
 
-    setTitulo("");
     setTextoOtimizado(null);
 
     await carregar();
@@ -521,32 +650,34 @@ function AppPage() {
   };
 
   const abrirRelatorio = (r: Relatorio) => {
-    setTexto(r.texto);
-    setTitulo(r.titulo);
+    const guardadas = Array.isArray(r.amostras)
+      ? (r.amostras as Amostra[]).filter(
+          (a) => a && typeof a.texto === "string",
+        )
+      : [];
 
-    setPacienteId(
-      r.paciente_id ?? "",
-    );
+    const lista: Amostra[] =
+      guardadas.length > 0
+        ? guardadas.map((a) => ({
+            id: a.id || novaAmostra().id,
+            titulo: a.titulo ?? "",
+            texto: a.texto ?? "",
+            resumo: { ...resumoVazio(), ...(a.resumo ?? {}) },
+          }))
+        : [
+            novaAmostra("", r.texto, {
+              fragmentos: r.fragmentos ?? 0,
+              blocos: r.blocos ?? 0,
+              seccionado: r.seccionado ?? false,
+              inclusao: r.inclusao ?? "total",
+              codigoFaturacao: r.codigo_faturacao ?? "31057",
+            }),
+          ];
 
-    setFragmentos(
-      r.fragmentos ?? 0,
-    );
+    setAmostras(lista);
+    setActivaId(lista[0]!.id);
+    setNumeroAnalise(r.titulo);
 
-    setBlocos(
-      r.blocos ?? 0,
-    );
-
-    setSeccionado(
-      r.seccionado ?? false,
-    );
-
-    setInclusao(
-      r.inclusao ?? "total",
-    );
-
-    setCodigoFaturacao(
-      r.codigo_faturacao ?? "31057",
-    );
 
     setTextoOtimizado(null);
 
@@ -583,7 +714,7 @@ function AppPage() {
     );
   };
 
-  const exportar = () => {
+  const exportar = async () => {
     if (!texto.trim()) {
       toast.error(
         "Não há texto para exportar.",
@@ -591,53 +722,45 @@ function AppPage() {
       return;
     }
 
-    const resumo = `
+    try {
+      const { gerarRelatorioDocx } = await import(
+        "@/lib/relatorio-docx"
+      );
 
-RESUMO TÉCNICO
+      const usaveis = amostras.filter((a) => a.texto.trim());
 
-N.º de fragmentos: ${fragmentos}
-N.º de blocos: ${blocos}
-Seccionado: ${
-      seccionado
-        ? "Sim"
-        : "Não"
+      const blob = await gerarRelatorioDocx({
+        numeroAnalise: numeroAnalise.trim(),
+        template,
+        instituicao: instituicao.trim() || "DermaVoz",
+        servico:
+          servico.trim() || "Serviço de Dermatopatologia",
+        amostras: usaveis.map((a, i) => ({
+          titulo: a.titulo.trim() || `Amostra ${i + 1}`,
+          texto: a.texto.trim(),
+          resumo: a.resumo,
+        })),
+      });
+
+
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+
+      a.href = url;
+
+      a.download = `${
+        numeroAnalise.trim() || "relatorio"
+      }.docx`;
+
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(
+        "Não foi possível gerar o documento Word.",
+      );
     }
-Inclusão: ${
-      inclusao === "total"
-        ? "Total"
-        : "Com reserva"
-    }
-Código de faturação: ${codigoFaturacao}
-`;
-
-    const conteudo =
-      `${texto.trim()}\n${resumo}`;
-
-    const blob = new Blob(
-      [conteudo],
-      {
-        type:
-          "text/plain;charset=utf-8",
-      },
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      `${
-        titulo.trim() ||
-        "transcricao"
-      }.txt`;
-
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   const copiar = async () => {
@@ -662,12 +785,278 @@ Código de faturação: ${codigoFaturacao}
     });
   };
 
-  const palavras = texto.trim()
-    ? texto
-        .trim()
-        .split(/\s+/)
-        .length
-    : 0;
+  // ---------- COMANDOS POR VOZ ----------
+
+  const recorderRef = useRef<RecorderHandle>(null);
+  const [maosLivres, setMaosLivres] = useState(false);
+  const [ajudaVoz, setAjudaVoz] = useState(false);
+  const [aGravar, setAGravar] = useState(false);
+  /** Suspende a escuta de comandos (microfone reservado ao gravador). */
+  const [vozSuspensa, setVozSuspensa] = useState(false);
+  const aGravarRef = useRef(false);
+  aGravarRef.current = aGravar;
+
+  const tratarEstadoGravacao = useCallback((activa: boolean) => {
+    setAGravar(activa);
+    aGravarRef.current = activa;
+    if (activa) {
+      // Gravação iniciada pelo botão: fixa a amostra activa como destino.
+      if (!alvoGravacaoRef.current) {
+        alvoGravacaoRef.current = accoesRef.current.amostraActiva.id;
+      }
+    } else {
+      setVozSuspensa(false);
+    }
+  }, []);
+
+
+
+  const [pendente, setPendente] = useState<{
+    comando: Comando;
+    descricao: string;
+  } | null>(null);
+
+  const accoesRef = useRef({
+    otimizarTexto,
+    guardar,
+    exportar,
+    copiar,
+    sair,
+    separarAmostras,
+    adicionarAmostra,
+    removerAmostra,
+    actualizarAmostra,
+    setNumeroAnalise,
+    setAmostras,
+    setActivaId,
+    amostras,
+    amostraActiva,
+  });
+  accoesRef.current = {
+    otimizarTexto,
+    guardar,
+    exportar,
+    copiar,
+    sair,
+    separarAmostras,
+    adicionarAmostra,
+    removerAmostra,
+    actualizarAmostra,
+    setNumeroAnalise,
+    setAmostras,
+    setActivaId,
+    amostras,
+    amostraActiva,
+  };
+
+  const descreverComando = (c: Comando) => {
+    switch (c.tipo) {
+      case "apagar-amostra":
+        return "Apagar a amostra activa";
+      case "novo-relatorio":
+        return "Limpar o relatório actual";
+      case "sair":
+        return "Terminar sessão";
+      default:
+        return "Confirmar acção";
+    }
+  };
+
+  const executar = useCallback((c: Comando) => {
+    const a = accoesRef.current;
+
+    switch (c.tipo) {
+      case "analise":
+        a.setNumeroAnalise(c.valor);
+        toast.success(`N.º da análise: ${c.valor}`);
+        break;
+
+      case "iniciar-gravacao": {
+        // Fixa a amostra destino antes de arrancar, e só anuncia
+        // "A gravar" quando o gravador arrancou mesmo.
+        alvoGravacaoRef.current = a.amostraActiva.id;
+
+        void (async () => {
+          let ok = (await recorderRef.current?.iniciar()) ?? false;
+
+          if (!ok) {
+            // Microfone possivelmente ocupado pela escuta de comandos:
+            // liberta-o e tenta uma segunda vez.
+            setVozSuspensa(true);
+            await new Promise((r) => window.setTimeout(r, 400));
+            ok = (await recorderRef.current?.iniciar()) ?? false;
+          }
+
+          if (!ok) {
+            alvoGravacaoRef.current = null;
+            setVozSuspensa(false);
+            toast.error(
+              recorderRef.current?.erro() ??
+                "Não foi possível iniciar a gravação.",
+            );
+            return;
+          }
+
+          toast.success("A gravar — diga \"App, parar\".");
+        })();
+        break;
+      }
+
+      case "parar-gravacao": {
+        const parou = recorderRef.current?.parar() ?? false;
+        setVozSuspensa(false);
+        toast[parou ? "success" : "info"](
+          parou ? "Gravação terminada." : "Não havia gravação em curso.",
+        );
+        break;
+      }
+
+
+      case "nova-amostra":
+        a.adicionarAmostra();
+        toast.success("Nova amostra criada.");
+        break;
+
+      case "ir-amostra": {
+        const alvo = a.amostras[c.indice - 1];
+        if (!alvo) {
+          toast.error(`Não existe a amostra ${c.indice}.`);
+          break;
+        }
+        a.setActivaId(alvo.id);
+        toast.success(`Amostra ${c.indice} activa.`);
+        break;
+      }
+
+      case "apagar-amostra":
+        a.removerAmostra(a.amostraActiva.id);
+        toast.success("Amostra removida.");
+        break;
+
+      case "resumo":
+        a.actualizarAmostra(a.amostraActiva.id, {
+          resumo: { ...a.amostraActiva.resumo, ...c.resumo },
+        });
+        toast.success("Resumo técnico actualizado.");
+        break;
+
+      case "separar":
+        void a.separarAmostras(
+          a.amostraActiva.id,
+          a.amostraActiva.texto,
+        );
+        break;
+
+      case "otimizar":
+        void a.otimizarTexto();
+        break;
+
+      case "guardar":
+        void a.guardar();
+        break;
+
+      case "exportar":
+        void a.exportar();
+        break;
+
+      case "copiar":
+        void a.copiar();
+        break;
+
+      case "novo-relatorio": {
+        const nova = novaAmostra();
+        a.setAmostras([nova]);
+        a.setActivaId(nova.id);
+        a.setNumeroAnalise("");
+        toast.success("Relatório limpo.");
+        break;
+      }
+
+      case "sair":
+        void a.sair();
+        break;
+
+      default:
+        break;
+    }
+  }, []);
+
+  const tratarFrase = useCallback(
+    ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
+      if (!isFinal) return;
+
+      const corpo = extrairComando(transcript);
+      if (corpo === null) return; // ditado normal
+
+      const comando = interpretarComando(corpo);
+      if (!comando) {
+        if (aGravarRef.current) return; // ditado em curso: ignorar ruído
+        toast.error(`Comando não reconhecido: "${corpo}"`);
+        return;
+      }
+
+      // Durante a gravação o microfone pertence ao ditado:
+      // só se aceita parar.
+      if (aGravarRef.current && comando.tipo !== "parar-gravacao") {
+        return;
+      }
+
+
+      if (comando.tipo === "ajuda") {
+        setAjudaVoz(true);
+        return;
+      }
+
+      if (comando.tipo === "cancelar") {
+        setPendente(null);
+        toast.info("Acção cancelada.");
+        return;
+      }
+
+      if (comando.tipo === "confirmar") {
+        setPendente((p) => {
+          if (!p) {
+            toast.error("Não há nenhuma acção por confirmar.");
+            return null;
+          }
+          executar(p.comando);
+          return null;
+        });
+        return;
+      }
+
+      if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
+        setPendente({
+          comando,
+          descricao: descreverComando(comando),
+        });
+        toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
+        return;
+      }
+
+      executar(comando);
+    },
+    [executar],
+  );
+
+  const {
+    suportado: vozSuportada,
+    aEscutar,
+    ultima,
+  } = useReconhecimentoVoz({
+    activo: maosLivres,
+    suspenso: vozSuspensa,
+    onFrase: tratarFrase,
+    onErro: (m) => {
+      toast.error(m);
+      setMaosLivres(false);
+    },
+  });
+
+
+  const palavras = contarPalavras(texto);
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -679,7 +1068,7 @@ Código de faturação: ${codigoFaturacao}
 
           <div>
             <h1 className="text-xl font-semibold text-primary-foreground">
-              Patologia Geral
+              DermaVoz
             </h1>
 
             <p className="text-sm text-primary-foreground/75">
@@ -706,106 +1095,62 @@ Código de faturação: ${codigoFaturacao}
 
           <div className="space-y-6">
 
+            <BarraComandosVoz
+              activo={maosLivres}
+              suportado={vozSuportada}
+              aEscutar={aEscutar}
+              ultima={ultima}
+              pendente={pendente?.descricao ?? null}
+              onAlternar={setMaosLivres}
+              ajudaAberta={ajudaVoz}
+              onAjudaChange={setAjudaVoz}
+              aGravar={aGravar}
+              vozSuspensa={vozSuspensa}
+            />
+
             <RecorderPanel
+              ref={recorderRef}
               disabled={aTranscrever}
               onAudio={handleAudio}
+              onEstadoChange={tratarEstadoGravacao}
             />
 
-            <ResumoTecnico
-              fragmentos={fragmentos}
-              blocos={blocos}
-              seccionado={seccionado}
-              inclusao={inclusao}
-              codigoFaturacao={
-                codigoFaturacao
+
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={aSeparar || !amostraActiva.texto.trim()}
+              onClick={() =>
+                separarAmostras(
+                  amostraActiva.id,
+                  amostraActiva.texto,
+                )
               }
-              onFragmentosChange={
-                setFragmentos
-              }
-              onBlocosChange={
-                setBlocos
-              }
-              onSeccionadoChange={
-                setSeccionado
-              }
-              onInclusaoChange={
-                setInclusao
-              }
-              onCodigoFaturacaoChange={
-                setCodigoFaturacao
-              }
+            >
+              {aSeparar ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <SplitSquareVertical className="size-4" />
+              )}
+              Separar amostras do ditado
+            </Button>
+
+
+            <CampoAnalise
+              valor={numeroAnalise}
+              onChange={setNumeroAnalise}
             />
 
-            <section className="panel space-y-3 p-6">
-              <h2 className="text-lg font-semibold text-foreground">
-                Doentes
-              </h2>
-
-              <div className="space-y-2">
-                <Label htmlFor="paciente">
-                  Associar a um doente
-                </Label>
-
-                <select
-                  id="paciente"
-                  value={pacienteId}
-                  onChange={(e) =>
-                    setPacienteId(
-                      e.target.value,
-                    )
-                  }
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">
-                    Sem doente associado
-                  </option>
-
-                  {pacientes.map((p) => (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                    >
-                      {p.nome}
-
-                      {p.numero_processo
-                        ? ` · ${p.numero_processo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  value={novoPaciente}
-                  onChange={(e) =>
-                    setNovoPaciente(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Nome do novo doente"
-                />
-
-                <Input
-                  value={novoProcesso}
-                  onChange={(e) =>
-                    setNovoProcesso(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="N.º de processo"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={criarPaciente}
-              >
-                <UserPlus className="size-4" />
-                Adicionar doente
-              </Button>
-            </section>
+            <ModeloDocumento
+              template={template}
+              instituicao={instituicao}
+              servico={servico}
+              onTemplateChange={setTemplate}
+              onInstituicaoChange={setInstituicao}
+              onServicoChange={setServico}
+            />
 
             {/* VOCABULÁRIO APRENDIDO */}
 
@@ -910,15 +1255,16 @@ Código de faturação: ${codigoFaturacao}
 
           <div className="space-y-6">
 
-            <section className="panel flex flex-col p-6">
+            <section className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
-                    Texto transcrito
+                    Amostras da análise
                   </h2>
 
                   <p className="text-sm text-muted-foreground">
-                    Reveja e corrija antes de guardar ou exportar.
+                    Dite tudo seguido dizendo &quot;amostra&quot; antes de cada
+                    uma, ou edite cada bloco aqui.
                   </p>
                 </div>
 
@@ -927,35 +1273,25 @@ Código de faturação: ${codigoFaturacao}
                 </span>
               </div>
 
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="titulo">
-                  Título do relatório
-                </Label>
-
-                <Input
-                  id="titulo"
-                  value={titulo}
-                  onChange={(e) =>
-                    setTitulo(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Ex.: Biópsia dorso — 19/08"
-                />
-              </div>
-
-              <Textarea
-                value={texto}
-                onChange={(e) =>
-                  setTexto(
-                    e.target.value,
-                  )
+              <ListaAmostras
+                amostras={amostras}
+                activaId={amostraActiva.id}
+                onActivar={setActivaId}
+                onTituloChange={(id, titulo) =>
+                  actualizarAmostra(id, { titulo })
                 }
-                placeholder="O texto transcrito aparecerá aqui."
-                className="mt-4 min-h-[360px] flex-1 resize-none text-sm leading-relaxed"
+                onTextoChange={(id, t) =>
+                  actualizarAmostra(id, { texto: t })
+                }
+                onResumoChange={(id, resumo) =>
+                  actualizarAmostra(id, { resumo })
+                }
+                onAdicionar={adicionarAmostra}
+                onRemover={removerAmostra}
+                onMover={moverAmostra}
               />
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={otimizarTexto}
                   className="gap-2"
@@ -988,8 +1324,15 @@ Código de faturação: ${codigoFaturacao}
                   onClick={exportar}
                 >
                   <FileDown className="size-4" />
-                  Exportar .txt
+                  Exportar Word (.docx)
                 </Button>
+
+                <ExportarHL7
+                  numeroAnalise={numeroAnalise}
+                  amostras={amostras}
+                  instituicao={instituicao}
+                  servico={servico}
+                />
 
                 <Button
                   variant="outline"
@@ -1004,9 +1347,11 @@ Código de faturação: ${codigoFaturacao}
                 <Button
                   variant="outline"
                   className="gap-2"
-                  onClick={() =>
-                    setTexto("")
-                  }
+                  onClick={() => {
+                    const nova = novaAmostra();
+                    setAmostras([nova]);
+                    setActivaId(nova.id);
+                  }}
                   disabled={!texto}
                 >
                   <Eraser className="size-4" />
@@ -1014,6 +1359,7 @@ Código de faturação: ${codigoFaturacao}
                 </Button>
               </div>
             </section>
+
 
             <section className="panel p-6">
               <h2 className="text-lg font-semibold text-foreground">

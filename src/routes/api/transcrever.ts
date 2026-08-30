@@ -7,7 +7,6 @@ import { mimeFor, VOCABULARIO, gatewayError } from "@/lib/ai-clinico";
 const bodySchema = z.object({
   audioBase64: z.string().min(10),
   format: z.enum(["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"]),
-  pistas: z.string().max(1200).optional(),
 });
 
 const MAX_BASE64 = 30 * 1024 * 1024; // ~22 MB de áudio
@@ -91,12 +90,7 @@ export const Route = createFileRoute("/api/transcrever")({
           `gravacao.${parsed.format}`,
         );
         form.append("language", "pt");
-        form.append(
-          "prompt",
-          parsed.pistas
-            ? `${VOCABULARIO} Termos frequentes deste médico: ${parsed.pistas}.`
-            : VOCABULARIO,
-        );
+        form.append("prompt", VOCABULARIO);
 
         const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
           method: "POST",
