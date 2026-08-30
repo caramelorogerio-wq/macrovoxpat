@@ -290,6 +290,7 @@ function AppPage() {
 
   const actualizarContexto = useCallback(async () => {
     try {
+      await garantirSessao();
       setContexto(
         await carregarVocabulario({
           data: undefined,
@@ -299,6 +300,7 @@ function AppPage() {
       setContexto(null);
     }
   }, [carregarVocabulario]);
+
 
   useEffect(() => {
     void carregar();
