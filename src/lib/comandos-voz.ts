@@ -175,10 +175,50 @@ const VARIANTES_ACTIVACAO = [
   "ap",
   "apo",
   "apps",
+  "ape",
+  "up",
+  "aplicacao",
   "patologia geral",
   "patologia",
   "patologia geral app",
 ];
+
+/** Palavras de enchimento que podem envolver o comando. */
+const FILLERS = [
+  "por favor",
+  "agora",
+  "ja",
+  "entao",
+  "ok",
+  "obrigado",
+  "obrigada",
+  "faz favor",
+];
+
+const limparFillers = (t: string) => {
+  let saida = t;
+  let mudou = true;
+
+  while (mudou) {
+    mudou = false;
+    for (const f of FILLERS) {
+      if (saida.startsWith(`${f} `)) {
+        saida = saida.slice(f.length + 1).trim();
+        mudou = true;
+      }
+      if (saida.endsWith(` ${f}`)) {
+        saida = saida.slice(0, -(f.length + 1)).trim();
+        mudou = true;
+      }
+      if (saida === f) {
+        saida = "";
+        mudou = true;
+      }
+    }
+  }
+
+  return saida;
+};
 
 /** Devolve o texto do comando quando a frase começa pela palavra de activação. */
 export function extrairComando(frase: string): string | null {
@@ -189,6 +229,7 @@ export function extrairComando(frase: string): string | null {
   }
   return null;
 }
+
 
 const numeroDe = (palavra: string | undefined): number | undefined => {
   if (!palavra) return undefined;
@@ -293,7 +334,7 @@ function lerResumo(texto: string): ResumoComando | null {
  * Devolve `null` quando nenhum comando é reconhecido.
  */
 export function interpretarComando(texto: string): Comando | null {
-  const t = normalizar(texto);
+  const t = limparFillers(normalizar(texto));
   if (!t) return null;
 
   if (/^(confirmar|confirmo|sim|confirma)$/.test(t)) return { tipo: "confirmar" };
@@ -310,11 +351,20 @@ export function interpretarComando(texto: string): Comando | null {
     if (valor) return { tipo: "analise", valor };
   }
 
-  if (/^(iniciar|comecar|come[cç]a|inicia|gravar|grava)( gravacao| a gravar)?$/.test(t))
+  if (
+    /^(iniciar|comecar|comeca|inicia|gravar|grava|retomar|continuar)(\s+(a\s+)?(gravacao|gravar|ditado|o ditado))?$/.test(
+      t,
+    )
+  )
     return { tipo: "iniciar-gravacao" };
 
-  if (/^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
+  if (
+    /^(parar|para|pare|parem|terminar|termina|termine|stop|fim|acabar|acaba)(\s+(a\s+|de\s+|o\s+)?(gravacao|gravar|ditado|ditar))?$/.test(
+      t,
+    )
+  )
     return { tipo: "parar-gravacao" };
+
 
   if (/^(nova amostra|adicionar amostra|proxima amostra)$/.test(t))
     return { tipo: "nova-amostra" };
@@ -352,8 +402,16 @@ export function interpretarComando(texto: string): Comando | null {
     if (resumo) return { tipo: "resumo", resumo };
   }
 
+  // Tolerância final: frases com palavras a mais ("parar a gravação já", …).
+  if (/\b(parar|pare|para|terminar|termina|stop|fim)\b/.test(t))
+    return { tipo: "parar-gravacao" };
+
+  if (/\b(iniciar|comecar|inicia|comeca)\b.*\b(gravacao|gravar|ditado)\b/.test(t))
+    return { tipo: "iniciar-gravacao" };
+
   return null;
 }
+
 
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
