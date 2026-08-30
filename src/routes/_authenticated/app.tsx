@@ -48,6 +48,7 @@ import {
   splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { comSessao, garantirSessao } from "@/lib/sessao";
 import {
   getVocabularioPessoal,
   registarCorreccoes,
