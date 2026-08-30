@@ -44,16 +44,29 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       }),
     });
 
-    const json = (await response.json()) as {
-      text?: string;
-      error?: string;
-    };
+    // A resposta pode não ser JSON (por ex. uma página de erro): ler como
+    // texto e só depois tentar interpretar, para não rebentar com erro de JSON.
+    const bruto = await response.text();
+
+    let json: { text?: string; error?: string } = {};
+
+    try {
+      json = JSON.parse(bruto) as { text?: string; error?: string };
+    } catch {
+      json = {};
+    }
 
     if (!response.ok) {
       throw new Error(
-        json.error ?? `Erro na transcrição (${response.status}).`,
+        json.error ??
+          `Erro na transcrição (${response.status}). Tente novamente.`,
       );
     }
+
+    if (json.text === undefined) {
+      throw new Error("Resposta inesperada do serviço de transcrição.");
+    }
+
 
     return {
       text: (json.text ?? "").trim(),
