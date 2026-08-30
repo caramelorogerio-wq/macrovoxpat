@@ -232,23 +232,35 @@ function AppPage() {
   }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
-    const [r, t, m] = await Promise.all([
-      supabase
-        .from("relatorios_transcritos")
-        .select(
-          "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
-        )
-        .order("created_at", { ascending: false }),
+    const sessao = await garantirSessao();
 
-      supabase
-        .from("termos_aprendidos")
-        .select(
-          "id, termo, correcao_de, ocorrencias, origem",
-        )
-        .eq("activo", true)
-        .order("ocorrencias", { ascending: false }),
+    if (!sessao) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
+      void navigate({ to: "/auth", replace: true });
+      return;
+    }
 
-      supabase.auth.getUser(),
+    const [r, t] = await Promise.all([
+      comSessao(() =>
+        supabase
+          .from("relatorios_transcritos")
+          .select(
+            "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
+          )
+          .order("created_at", { ascending: false }),
+      ),
+
+      comSessao(() =>
+        supabase
+          .from("termos_aprendidos")
+          .select(
+            "id, termo, correcao_de, ocorrencias, origem",
+          )
+          .eq("activo", true)
+          .order("ocorrencias", { ascending: false }),
+      ),
     ]);
 
 
@@ -260,18 +272,20 @@ function AppPage() {
       setTermos(t.data);
     }
 
-    if (m.data.user) {
-      const perfil = await supabase
+    const perfil = await comSessao(() =>
+      supabase
         .from("medicos")
         .select("aprendizagem_activa")
-        .eq("id", m.data.user.id)
-        .maybeSingle();
+        .eq("id", sessao.user.id)
+        .maybeSingle(),
+    );
 
-      setAprendizagem(
-        perfil.data?.aprendizagem_activa !== false,
-      );
-    }
-  }, []);
+    setAprendizagem(
+      perfil.data?.aprendizagem_activa !== false,
+    );
+  }, [navigate]);
+
+
 
   const actualizarContexto = useCallback(async () => {
     try {
