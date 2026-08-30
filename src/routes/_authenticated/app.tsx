@@ -393,11 +393,9 @@ function AppPage() {
       const audioBase64 =
         await blobToBase64(blob);
 
-      const { data: sessionData } =
-        await supabase.auth.getSession();
+      const sessao = await garantirSessao();
 
-      const accessToken =
-        sessionData.session?.access_token;
+      const accessToken = sessao?.access_token;
 
       if (!accessToken) {
         toast.error(
@@ -405,6 +403,7 @@ function AppPage() {
         );
         return;
       }
+
 
       const resultado = await transcrever({
         data: {
