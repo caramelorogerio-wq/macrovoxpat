@@ -1,6 +1,6 @@
 /**
  * Geração de mensagens HL7 de saída a partir de um relatório de
- * dermatopatologia: HL7 v2.5 (ORU^R01) e FHIR R4 (Bundle com
+ * anatomia patológica: HL7 v2.5 (ORU^R01) e FHIR R4 (Bundle com
  * DiagnosticReport + Observation + Specimen).
  *
  * Fase 1: apenas geração/pré-visualização e envio HTTPS opcional.
