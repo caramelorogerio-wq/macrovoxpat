@@ -175,10 +175,50 @@ const VARIANTES_ACTIVACAO = [
   "ap",
   "apo",
   "apps",
+  "ape",
+  "up",
+  "aplicacao",
   "patologia geral",
   "patologia",
   "patologia geral app",
 ];
+
+/** Palavras de enchimento que podem envolver o comando. */
+const FILLERS = [
+  "por favor",
+  "agora",
+  "ja",
+  "entao",
+  "ok",
+  "obrigado",
+  "obrigada",
+  "faz favor",
+];
+
+const limparFillers = (t: string) => {
+  let saida = t;
+  let mudou = true;
+
+  while (mudou) {
+    mudou = false;
+    for (const f of FILLERS) {
+      if (saida.startsWith(`${f} `)) {
+        saida = saida.slice(f.length + 1).trim();
+        mudou = true;
+      }
+      if (saida.endsWith(` ${f}`)) {
+        saida = saida.slice(0, -(f.length + 1)).trim();
+        mudou = true;
+      }
+      if (saida === f) {
+        saida = "";
+        mudou = true;
+      }
+    }
+  }
+
+  return saida;
+};
 
 /** Devolve o texto do comando quando a frase começa pela palavra de activação. */
 export function extrairComando(frase: string): string | null {
@@ -189,6 +229,7 @@ export function extrairComando(frase: string): string | null {
   }
   return null;
 }
+
 
 const numeroDe = (palavra: string | undefined): number | undefined => {
   if (!palavra) return undefined;
