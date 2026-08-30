@@ -490,7 +490,9 @@ function AppPage() {
       let blocos: { titulo: string; texto: string }[] = [];
 
       try {
+        await garantirSessao();
         const resultado = await separarIA({
+
           data: { texto: conteudo },
         });
 
