@@ -402,8 +402,16 @@ export function interpretarComando(texto: string): Comando | null {
     if (resumo) return { tipo: "resumo", resumo };
   }
 
+  // Tolerância final: frases com palavras a mais ("parar a gravação já", …).
+  if (/\b(parar|pare|para|terminar|termina|stop|fim)\b/.test(t))
+    return { tipo: "parar-gravacao" };
+
+  if (/\b(iniciar|comecar|inicia|comeca)\b.*\b(gravacao|gravar|ditado)\b/.test(t))
+    return { tipo: "iniciar-gravacao" };
+
   return null;
 }
+
 
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
