@@ -602,15 +602,17 @@ function AppPage() {
       return;
     }
 
-    const { data: sessao } =
-      await supabase.auth.getUser();
+    const sessao = await garantirSessao();
 
-    if (!sessao.user) {
+    if (!sessao) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
       return;
     }
 
-    const { error } =
-      await supabase
+    const { error } = await comSessao(() =>
+      supabase
         .from("relatorios_transcritos")
         .insert({
           medico_id: sessao.user.id,
@@ -630,7 +632,9 @@ function AppPage() {
           inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
             amostraActiva.resumo.codigoFaturacao,
-        });
+        }),
+    );
+
 
 
     if (error) {
