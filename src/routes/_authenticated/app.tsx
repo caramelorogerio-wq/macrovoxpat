@@ -557,7 +557,10 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
+      await garantirSessao();
+
       const revistas = await Promise.all(
+
         amostras.map(async (a) => {
           if (!a.texto.trim()) return a;
 
