@@ -308,22 +308,24 @@ function AppPage() {
   const alternarAprendizagem = async () => {
     const novaEstado = !aprendizagem;
 
-    const { data: sessao } =
-      await supabase.auth.getUser();
+    const sessao = await garantirSessao();
 
-    if (!sessao.user) {
+    if (!sessao) {
       toast.error(
         "Sessão expirada. Volte a iniciar sessão.",
       );
       return;
     }
 
-    const { error } = await supabase
-      .from("medicos")
-      .update({
-        aprendizagem_activa: novaEstado,
-      })
-      .eq("id", sessao.user.id);
+    const { error } = await comSessao(() =>
+      supabase
+        .from("medicos")
+        .update({
+          aprendizagem_activa: novaEstado,
+        })
+        .eq("id", sessao.user.id),
+    );
+
 
     if (error) {
       toast.error(
