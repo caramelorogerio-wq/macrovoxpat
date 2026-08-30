@@ -48,6 +48,7 @@ import {
   splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { comSessao, garantirSessao } from "@/lib/sessao";
 import {
   getVocabularioPessoal,
   registarCorreccoes,
@@ -232,23 +233,35 @@ function AppPage() {
   }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
-    const [r, t, m] = await Promise.all([
-      supabase
-        .from("relatorios_transcritos")
-        .select(
-          "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
-        )
-        .order("created_at", { ascending: false }),
+    const sessao = await garantirSessao();
 
-      supabase
-        .from("termos_aprendidos")
-        .select(
-          "id, termo, correcao_de, ocorrencias, origem",
-        )
-        .eq("activo", true)
-        .order("ocorrencias", { ascending: false }),
+    if (!sessao) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
+      void navigate({ to: "/auth", replace: true });
+      return;
+    }
 
-      supabase.auth.getUser(),
+    const [r, t] = await Promise.all([
+      comSessao(() =>
+        supabase
+          .from("relatorios_transcritos")
+          .select(
+            "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
+          )
+          .order("created_at", { ascending: false }),
+      ),
+
+      comSessao(() =>
+        supabase
+          .from("termos_aprendidos")
+          .select(
+            "id, termo, correcao_de, ocorrencias, origem",
+          )
+          .eq("activo", true)
+          .order("ocorrencias", { ascending: false }),
+      ),
     ]);
 
 
@@ -260,21 +273,24 @@ function AppPage() {
       setTermos(t.data);
     }
 
-    if (m.data.user) {
-      const perfil = await supabase
+    const perfil = await comSessao(() =>
+      supabase
         .from("medicos")
         .select("aprendizagem_activa")
-        .eq("id", m.data.user.id)
-        .maybeSingle();
+        .eq("id", sessao.user.id)
+        .maybeSingle(),
+    );
 
-      setAprendizagem(
-        perfil.data?.aprendizagem_activa !== false,
-      );
-    }
-  }, []);
+    setAprendizagem(
+      perfil.data?.aprendizagem_activa !== false,
+    );
+  }, [navigate]);
+
+
 
   const actualizarContexto = useCallback(async () => {
     try {
+      await garantirSessao();
       setContexto(
         await carregarVocabulario({
           data: undefined,
@@ -285,6 +301,7 @@ function AppPage() {
     }
   }, [carregarVocabulario]);
 
+
   useEffect(() => {
     void carregar();
     void actualizarContexto();
@@ -293,22 +310,24 @@ function AppPage() {
   const alternarAprendizagem = async () => {
     const novaEstado = !aprendizagem;
 
-    const { data: sessao } =
-      await supabase.auth.getUser();
+    const sessao = await garantirSessao();
 
-    if (!sessao.user) {
+    if (!sessao) {
       toast.error(
         "Sessão expirada. Volte a iniciar sessão.",
       );
       return;
     }
 
-    const { error } = await supabase
-      .from("medicos")
-      .update({
-        aprendizagem_activa: novaEstado,
-      })
-      .eq("id", sessao.user.id);
+    const { error } = await comSessao(() =>
+      supabase
+        .from("medicos")
+        .update({
+          aprendizagem_activa: novaEstado,
+        })
+        .eq("id", sessao.user.id),
+    );
+
 
     if (error) {
       toast.error(
@@ -338,10 +357,13 @@ function AppPage() {
   };
 
   const removerTermo = async (termo: Termo) => {
-    const { error } = await supabase
-      .from("termos_aprendidos")
-      .update({ activo: false })
-      .eq("id", termo.id);
+    const { error } = await comSessao(() =>
+      supabase
+        .from("termos_aprendidos")
+        .update({ activo: false })
+        .eq("id", termo.id),
+    );
+
 
     if (error) {
       toast.error(
@@ -373,11 +395,9 @@ function AppPage() {
       const audioBase64 =
         await blobToBase64(blob);
 
-      const { data: sessionData } =
-        await supabase.auth.getSession();
+      const sessao = await garantirSessao();
 
-      const accessToken =
-        sessionData.session?.access_token;
+      const accessToken = sessao?.access_token;
 
       if (!accessToken) {
         toast.error(
@@ -385,6 +405,7 @@ function AppPage() {
         );
         return;
       }
+
 
       const resultado = await transcrever({
         data: {
@@ -469,7 +490,9 @@ function AppPage() {
       let blocos: { titulo: string; texto: string }[] = [];
 
       try {
+        await garantirSessao();
         const resultado = await separarIA({
+
           data: { texto: conteudo },
         });
 
@@ -534,7 +557,10 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
+      await garantirSessao();
+
       const revistas = await Promise.all(
+
         amostras.map(async (a) => {
           if (!a.texto.trim()) return a;
 
@@ -583,15 +609,17 @@ function AppPage() {
       return;
     }
 
-    const { data: sessao } =
-      await supabase.auth.getUser();
+    const sessao = await garantirSessao();
 
-    if (!sessao.user) {
+    if (!sessao) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
       return;
     }
 
-    const { error } =
-      await supabase
+    const { error } = await comSessao(() =>
+      supabase
         .from("relatorios_transcritos")
         .insert({
           medico_id: sessao.user.id,
@@ -611,7 +639,9 @@ function AppPage() {
           inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
             amostraActiva.resumo.codigoFaturacao,
-        });
+        }),
+    );
+
 
 
     if (error) {
@@ -694,11 +724,13 @@ function AppPage() {
   const apagar = async (
     id: string,
   ) => {
-    const { error } =
-      await supabase
+    const { error } = await comSessao(() =>
+      supabase
         .from("relatorios_transcritos")
         .delete()
-        .eq("id", id);
+        .eq("id", id),
+    );
+
 
     if (error) {
       toast.error(
