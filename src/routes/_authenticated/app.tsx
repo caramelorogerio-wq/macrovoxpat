@@ -878,6 +878,7 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
+    setDiagramaAberto,
     amostras,
     amostraActiva,
   });
@@ -894,9 +895,11 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
+    setDiagramaAberto,
     amostras,
     amostraActiva,
   };
+
 
   const descreverComando = (c: Comando) => {
     switch (c.tipo) {
