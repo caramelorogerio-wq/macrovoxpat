@@ -32,6 +32,15 @@ import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
 import { ExportarHL7 } from "@/components/exportar-hl7";
+import {
+  aplicarLegenda,
+  lerDiagrama,
+  lerLegenda,
+  removerLinhaLegenda,
+  type Diagrama,
+  type LinhaLegenda,
+} from "@/lib/legendas";
+
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   type Amostra,
