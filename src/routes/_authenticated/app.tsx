@@ -774,7 +774,26 @@ function AppPage() {
         "@/lib/relatorio-docx"
       );
 
+      const { pngDiagrama } = await import("@/lib/diagrama-svg");
+      const { legendaTexto } = await import("@/lib/legendas");
+
       const usaveis = amostras.filter((a) => a.texto.trim());
+
+      const paraDocx = await Promise.all(
+        usaveis.map(async (a, i) => {
+          const png = a.diagrama
+            ? await pngDiagrama(a.diagrama)
+            : null;
+
+          return {
+            titulo: a.titulo.trim() || `Amostra ${i + 1}`,
+            texto: a.texto.trim(),
+            resumo: a.resumo,
+            legenda: legendaTexto(a.legenda ?? []),
+            ...(png ? { diagramaPng: png } : {}),
+          };
+        }),
+      );
 
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
@@ -782,12 +801,9 @@ function AppPage() {
         instituicao: instituicao.trim() || "Patologia Geral",
         servico:
           servico.trim() || "Serviço de Anatomia Patológica",
-        amostras: usaveis.map((a, i) => ({
-          titulo: a.titulo.trim() || `Amostra ${i + 1}`,
-          texto: a.texto.trim(),
-          resumo: a.resumo,
-        })),
+        amostras: paraDocx,
       });
+
 
 
       const url = URL.createObjectURL(blob);
