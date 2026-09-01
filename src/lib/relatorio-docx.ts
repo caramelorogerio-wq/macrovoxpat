@@ -56,7 +56,12 @@ export type AmostraDocx = {
   titulo: string;
   texto: string;
   resumo: ResumoDocx;
+  /** Linhas "Bloco 1 — descrição". */
+  legenda?: string[];
+  /** Imagem PNG do esquema do órgão com os blocos marcados. */
+  diagramaPng?: Uint8Array;
 };
+
 
 export type RelatorioDocx = {
   numeroAnalise: string;
