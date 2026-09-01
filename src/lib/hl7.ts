@@ -222,7 +222,11 @@ export const gerarBundleFhir = ({
           id: `${analise}-${ordem}`,
           accessionIdentifier: { value: `${analise}-${ordem}` },
           type: { text: titulo },
-          note: [{ text: resumoTexto(a) }],
+          note: [
+            { text: resumoTexto(a) },
+            ...legendaTexto(a.legenda ?? []).map((text) => ({ text })),
+          ],
+
         },
         request: { method: "PUT", url: idEspecime },
       },
