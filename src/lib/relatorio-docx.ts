@@ -384,7 +384,7 @@ export async function gerarRelatorioDocx({
       }
     }
 
-    );
+
 
     return paragrafos;
 
