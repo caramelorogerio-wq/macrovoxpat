@@ -696,7 +696,10 @@ function AppPage() {
             titulo: a.titulo ?? "",
             texto: a.texto ?? "",
             resumo: { ...resumoVazio(), ...(a.resumo ?? {}) },
+            legenda: lerLegenda(a.legenda),
+            diagrama: lerDiagrama(a.diagrama),
           }))
+
         : [
             novaAmostra("", r.texto, {
               fragmentos: r.fragmentos ?? 0,
