@@ -5,6 +5,8 @@ import {
   Footer,
   Header,
   HeadingLevel,
+  ImageRun,
+
   PageNumber,
   Packer,
   Paragraph,
