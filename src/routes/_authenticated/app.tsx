@@ -529,7 +529,10 @@ function AppPage() {
             i === 0
               ? base.resumo
               : { ...resumoVazio() },
+          legenda: i === 0 ? base.legenda : [],
+          diagrama: i === 0 ? base.diagrama : null,
         }));
+
 
         return [
           ...lista.slice(0, indice),
