@@ -8,6 +8,8 @@
  */
 
 import type { Amostra } from "./amostras";
+import { legendaTexto } from "./legendas";
+
 
 export type DadosHL7 = {
   numeroAnalise: string;
