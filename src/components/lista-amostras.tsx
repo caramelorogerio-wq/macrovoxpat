@@ -165,7 +165,23 @@ export function ListaAmostras({
                 })
               }
             />
+
+            <LegendaBlocos
+              legenda={amostra.legenda ?? []}
+              diagrama={amostra.diagrama ?? null}
+              onLegendaChange={(linhas) =>
+                onLegendaChange(amostra.id, linhas)
+              }
+              onDiagramaChange={(d) => onDiagramaChange(amostra.id, d)}
+              {...(activa
+                ? {
+                    diagramaAberto: diagramaAberto,
+                    onDiagramaAbertoChange: onDiagramaAbertoChange,
+                  }
+                : {})}
+            />
           </section>
+
         );
       })}
 
