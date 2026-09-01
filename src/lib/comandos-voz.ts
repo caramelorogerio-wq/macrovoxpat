@@ -347,6 +347,48 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
 
+  if (/^(abrir|mostrar|ver|abre) (o |do )?(diagrama|esquema)( do orgao| do órgão| da peca| da peça)?$/.test(t))
+    return { tipo: "diagrama", aberto: true };
+
+  if (/^(fechar|esconder|fecha|ocultar) (o )?(diagrama|esquema)$/.test(t))
+    return { tipo: "diagrama", aberto: false };
+
+  const apagarLegenda = t.match(
+    /^(?:apagar|remover|eliminar) (?:a )?legenda (?:do )?bloco (\d+|[a-z]+)$/,
+  );
+  const blocoApagar = numeroDe(apagarLegenda?.[1]);
+  if (blocoApagar !== undefined && blocoApagar >= 1)
+    return { tipo: "apagar-legenda-bloco", bloco: blocoApagar };
+
+  const legenda = t.match(
+    /^legenda(?: de| do| da)?\s+blocos?\s+(\d+|[a-z]+)(?:\s+(?:a|ate|e)\s+(\d+|[a-z]+))?\s+(.+)$/,
+  );
+
+  if (legenda) {
+    const inicio = numeroDe(legenda[1]);
+    const fim = numeroDe(legenda[2]) ?? inicio;
+    const descricao = (legenda[3] ?? "").trim();
+
+    if (
+      inicio !== undefined &&
+      inicio >= 1 &&
+      fim !== undefined &&
+      fim >= inicio &&
+      fim - inicio < 50 &&
+      descricao
+    ) {
+      const blocos: number[] = [];
+      for (let b = inicio; b <= fim; b++) blocos.push(b);
+
+      return {
+        tipo: "legenda-bloco",
+        blocos,
+        descricao: descricao.charAt(0).toUpperCase() + descricao.slice(1),
+      };
+    }
+  }
+
+
   const analise = t.match(
     /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
