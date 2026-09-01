@@ -333,6 +333,59 @@ export async function gerarRelatorioDocx({
       tabelaResumo(campos),
     );
 
+    const legenda = (amostra.legenda ?? []).filter((l) => l.trim());
+
+    if (legenda.length > 0 || amostra.diagramaPng) {
+      paragrafos.push(
+        new Paragraph({
+          spacing: { before: 240, after: 80 },
+          children: [
+            new TextRun({
+              text: "Legenda de blocos",
+              bold: true,
+              size: varias ? 22 : 24,
+              font: "Century Gothic",
+            }),
+          ],
+        }),
+      );
+
+      paragrafos.push(
+        ...legenda.map(
+          (l) =>
+            new Paragraph({
+              spacing: { after: 40 },
+              children: [
+                new TextRun({ text: l, font: "Century Gothic", size: 20 }),
+              ],
+            }),
+        ),
+      );
+
+      if (amostra.diagramaPng) {
+        paragrafos.push(
+          new Paragraph({
+            spacing: { before: 120, after: 120 },
+            children: [
+              new ImageRun({
+                type: "png",
+                data: amostra.diagramaPng,
+                transformation: { width: 240, height: 240 },
+                altText: {
+                  title: "Esquema do órgão",
+                  description:
+                    "Esquema anatómico com a localização dos blocos.",
+                  name: "diagrama",
+                },
+              }),
+            ],
+          }),
+        );
+      }
+    }
+
+    );
+
     return paragrafos;
 
   };
