@@ -837,6 +837,8 @@ function AppPage() {
   const recorderRef = useRef<RecorderHandle>(null);
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
+  const [diagramaAberto, setDiagramaAberto] = useState(false);
+
   const [aGravar, setAGravar] = useState(false);
   /** Suspende a escuta de comandos (microfone reservado ao gravador). */
   const [vozSuspensa, setVozSuspensa] = useState(false);
