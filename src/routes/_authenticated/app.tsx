@@ -1333,10 +1333,19 @@ function AppPage() {
                 onResumoChange={(id, resumo) =>
                   actualizarAmostra(id, { resumo })
                 }
+                onLegendaChange={(id, legenda) =>
+                  actualizarAmostra(id, { legenda })
+                }
+                onDiagramaChange={(id, diagrama) =>
+                  actualizarAmostra(id, { diagrama })
+                }
                 onAdicionar={adicionarAmostra}
                 onRemover={removerAmostra}
                 onMover={moverAmostra}
+                diagramaAberto={diagramaAberto}
+                onDiagramaAbertoChange={setDiagramaAberto}
               />
+
 
               <div className="flex flex-wrap gap-3">
                 <Button
