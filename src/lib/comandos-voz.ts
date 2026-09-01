@@ -478,6 +478,21 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
   { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
   {
+    dizer: "App, legenda bloco um margem proximal",
+    faz: "Escreve a legenda desse bloco",
+  },
+  {
+    dizer: "App, legenda blocos dois a quatro parede posterior",
+    faz: "Mesma legenda para vários blocos",
+  },
+  {
+    dizer: "App, apagar legenda bloco três",
+    faz: "Remove a legenda desse bloco",
+  },
+  { dizer: "App, abrir diagrama", faz: "Mostra o esquema do órgão" },
+  { dizer: "App, fechar diagrama", faz: "Esconde o esquema" },
+
+  {
     dizer: "App, resumo técnico 3 fragmentos 2 blocos seccionado total",
     faz: "Preenche o resumo técnico",
   },
