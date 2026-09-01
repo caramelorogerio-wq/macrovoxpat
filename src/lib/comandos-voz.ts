@@ -23,6 +23,9 @@ export type Comando =
   | { tipo: "ir-amostra"; indice: number }
   | { tipo: "apagar-amostra" }
   | { tipo: "resumo"; resumo: ResumoComando }
+  | { tipo: "legenda-bloco"; blocos: number[]; descricao: string }
+  | { tipo: "apagar-legenda-bloco"; bloco: number }
+  | { tipo: "diagrama"; aberto: boolean }
   | { tipo: "separar" }
   | { tipo: "otimizar" }
   | { tipo: "guardar" }
@@ -33,6 +36,7 @@ export type Comando =
   | { tipo: "ajuda" }
   | { tipo: "confirmar" }
   | { tipo: "cancelar" };
+
 
 /** Acções que só executam depois de um "confirmar". */
 export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
@@ -343,6 +347,48 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
 
+  if (/^(abrir|mostrar|ver|abre) (o |do )?(diagrama|esquema)( do orgao| do órgão| da peca| da peça)?$/.test(t))
+    return { tipo: "diagrama", aberto: true };
+
+  if (/^(fechar|esconder|fecha|ocultar) (o )?(diagrama|esquema)$/.test(t))
+    return { tipo: "diagrama", aberto: false };
+
+  const apagarLegenda = t.match(
+    /^(?:apagar|remover|eliminar) (?:a )?legenda (?:do )?bloco (\d+|[a-z]+)$/,
+  );
+  const blocoApagar = numeroDe(apagarLegenda?.[1]);
+  if (blocoApagar !== undefined && blocoApagar >= 1)
+    return { tipo: "apagar-legenda-bloco", bloco: blocoApagar };
+
+  const legenda = t.match(
+    /^legenda(?: de| do| da)?\s+blocos?\s+(\d+|[a-z]+)(?:\s+(?:a|ate|e)\s+(\d+|[a-z]+))?\s+(.+)$/,
+  );
+
+  if (legenda) {
+    const inicio = numeroDe(legenda[1]);
+    const fim = numeroDe(legenda[2]) ?? inicio;
+    const descricao = (legenda[3] ?? "").trim();
+
+    if (
+      inicio !== undefined &&
+      inicio >= 1 &&
+      fim !== undefined &&
+      fim >= inicio &&
+      fim - inicio < 50 &&
+      descricao
+    ) {
+      const blocos: number[] = [];
+      for (let b = inicio; b <= fim; b++) blocos.push(b);
+
+      return {
+        tipo: "legenda-bloco",
+        blocos,
+        descricao: descricao.charAt(0).toUpperCase() + descricao.slice(1),
+      };
+    }
+  }
+
+
   const analise = t.match(
     /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
@@ -431,6 +477,21 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, amostra dois", faz: "Muda para essa amostra" },
   { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
   { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
+  {
+    dizer: "App, legenda bloco um margem proximal",
+    faz: "Escreve a legenda desse bloco",
+  },
+  {
+    dizer: "App, legenda blocos dois a quatro parede posterior",
+    faz: "Mesma legenda para vários blocos",
+  },
+  {
+    dizer: "App, apagar legenda bloco três",
+    faz: "Remove a legenda desse bloco",
+  },
+  { dizer: "App, abrir diagrama", faz: "Mostra o esquema do órgão" },
+  { dizer: "App, fechar diagrama", faz: "Esconde o esquema" },
+
   {
     dizer: "App, resumo técnico 3 fragmentos 2 blocos seccionado total",
     faz: "Preenche o resumo técnico",

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ResumoTecnico } from "@/components/resumo-tecnico";
+import { LegendaBlocos } from "@/components/legenda-blocos";
 import type { Amostra, ResumoAmostra } from "@/lib/amostras";
 import { contarPalavras } from "@/lib/amostras";
+import type { Diagrama, LinhaLegenda } from "@/lib/legendas";
 
 type Props = {
   amostras: Amostra[];
@@ -14,9 +16,14 @@ type Props = {
   onTituloChange: (id: string, titulo: string) => void;
   onTextoChange: (id: string, texto: string) => void;
   onResumoChange: (id: string, resumo: ResumoAmostra) => void;
+  onLegendaChange: (id: string, legenda: LinhaLegenda[]) => void;
+  onDiagramaChange: (id: string, diagrama: Diagrama | null) => void;
   onAdicionar: () => void;
   onRemover: (id: string) => void;
   onMover: (id: string, direccao: -1 | 1) => void;
+  /** Diagrama aberto por comando de voz, na amostra activa. */
+  diagramaAberto?: boolean;
+  onDiagramaAbertoChange?: (aberto: boolean) => void;
 };
 
 export function ListaAmostras({
@@ -26,10 +33,15 @@ export function ListaAmostras({
   onTituloChange,
   onTextoChange,
   onResumoChange,
+  onLegendaChange,
+  onDiagramaChange,
   onAdicionar,
   onRemover,
   onMover,
+  diagramaAberto,
+  onDiagramaAbertoChange,
 }: Props) {
+
   return (
     <div className="space-y-4">
       {amostras.map((amostra, indice) => {
@@ -153,7 +165,23 @@ export function ListaAmostras({
                 })
               }
             />
+
+            <LegendaBlocos
+              legenda={amostra.legenda ?? []}
+              diagrama={amostra.diagrama ?? null}
+              onLegendaChange={(linhas) =>
+                onLegendaChange(amostra.id, linhas)
+              }
+              onDiagramaChange={(d) => onDiagramaChange(amostra.id, d)}
+              {...(activa
+                ? {
+                    diagramaAberto: diagramaAberto,
+                    onDiagramaAbertoChange: onDiagramaAbertoChange,
+                  }
+                : {})}
+            />
           </section>
+
         );
       })}
 

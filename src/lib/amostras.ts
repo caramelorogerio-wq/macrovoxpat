@@ -1,3 +1,5 @@
+import type { Diagrama, LinhaLegenda } from "./legendas";
+
 export type ResumoAmostra = {
   fragmentos: number;
   blocos: number;
@@ -11,6 +13,10 @@ export type Amostra = {
   titulo: string;
   texto: string;
   resumo: ResumoAmostra;
+  /** Legenda bloco → descrição desta amostra. */
+  legenda: LinhaLegenda[];
+  /** Esquema do órgão com os blocos marcados. */
+  diagrama: Diagrama | null;
 };
 
 export const resumoVazio = (): ResumoAmostra => ({
@@ -35,7 +41,10 @@ export const novaAmostra = (
   titulo,
   texto,
   resumo: { ...resumoVazio(), ...resumo },
+  legenda: [],
+  diagrama: null,
 });
+
 
 /**
  * Converte comandos de voz de aspas em aspas reais.

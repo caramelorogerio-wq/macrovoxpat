@@ -8,6 +8,8 @@
  */
 
 import type { Amostra } from "./amostras";
+import { legendaTexto } from "./legendas";
+
 
 export type DadosHL7 = {
   numeroAnalise: string;
@@ -166,6 +168,27 @@ export const gerarORU = ({
         "F",
       ].join("|"),
     );
+
+    for (const l of legendaTexto(a.legenda ?? [])) {
+      obx += 1;
+      segmentos.push(
+        [
+          "OBX",
+          String(obx),
+          "TX",
+          "LEGENDA^Legenda de blocos^L",
+          String(ordem),
+          escaparHL7(l),
+          "",
+          "",
+          "",
+          "",
+          "",
+          "F",
+        ].join("|"),
+      );
+    }
+
   });
 
   // HL7 v2 usa CR como separador de segmento.
@@ -199,7 +222,11 @@ export const gerarBundleFhir = ({
           id: `${analise}-${ordem}`,
           accessionIdentifier: { value: `${analise}-${ordem}` },
           type: { text: titulo },
-          note: [{ text: resumoTexto(a) }],
+          note: [
+            { text: resumoTexto(a) },
+            ...legendaTexto(a.legenda ?? []).map((text) => ({ text })),
+          ],
+
         },
         request: { method: "PUT", url: idEspecime },
       },

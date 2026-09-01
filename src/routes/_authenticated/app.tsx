@@ -32,6 +32,15 @@ import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
 import { ExportarHL7 } from "@/components/exportar-hl7";
+import {
+  aplicarLegenda,
+  lerDiagrama,
+  lerLegenda,
+  removerLinhaLegenda,
+  type Diagrama,
+  type LinhaLegenda,
+} from "@/lib/legendas";
+
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   type Amostra,
@@ -529,7 +538,10 @@ function AppPage() {
             i === 0
               ? base.resumo
               : { ...resumoVazio() },
+          legenda: i === 0 ? base.legenda : [],
+          diagrama: i === 0 ? base.diagrama : null,
         }));
+
 
         return [
           ...lista.slice(0, indice),
@@ -693,7 +705,10 @@ function AppPage() {
             titulo: a.titulo ?? "",
             texto: a.texto ?? "",
             resumo: { ...resumoVazio(), ...(a.resumo ?? {}) },
+            legenda: lerLegenda(a.legenda),
+            diagrama: lerDiagrama(a.diagrama),
           }))
+
         : [
             novaAmostra("", r.texto, {
               fragmentos: r.fragmentos ?? 0,
@@ -759,7 +774,26 @@ function AppPage() {
         "@/lib/relatorio-docx"
       );
 
+      const { pngDiagrama } = await import("@/lib/diagrama-svg");
+      const { legendaTexto } = await import("@/lib/legendas");
+
       const usaveis = amostras.filter((a) => a.texto.trim());
+
+      const paraDocx = await Promise.all(
+        usaveis.map(async (a, i) => {
+          const png = a.diagrama
+            ? await pngDiagrama(a.diagrama)
+            : null;
+
+          return {
+            titulo: a.titulo.trim() || `Amostra ${i + 1}`,
+            texto: a.texto.trim(),
+            resumo: a.resumo,
+            legenda: legendaTexto(a.legenda ?? []),
+            ...(png ? { diagramaPng: png } : {}),
+          };
+        }),
+      );
 
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
@@ -767,12 +801,9 @@ function AppPage() {
         instituicao: instituicao.trim() || "Patologia Geral",
         servico:
           servico.trim() || "Serviço de Anatomia Patológica",
-        amostras: usaveis.map((a, i) => ({
-          titulo: a.titulo.trim() || `Amostra ${i + 1}`,
-          texto: a.texto.trim(),
-          resumo: a.resumo,
-        })),
+        amostras: paraDocx,
       });
+
 
 
       const url = URL.createObjectURL(blob);
@@ -822,6 +853,8 @@ function AppPage() {
   const recorderRef = useRef<RecorderHandle>(null);
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
+  const [diagramaAberto, setDiagramaAberto] = useState(false);
+
   const [aGravar, setAGravar] = useState(false);
   /** Suspende a escuta de comandos (microfone reservado ao gravador). */
   const [vozSuspensa, setVozSuspensa] = useState(false);
@@ -861,6 +894,7 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
+    setDiagramaAberto,
     amostras,
     amostraActiva,
   });
@@ -877,9 +911,11 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
+    setDiagramaAberto,
     amostras,
     amostraActiva,
   };
+
 
   const descreverComando = (c: Comando) => {
     switch (c.tipo) {
@@ -971,6 +1007,54 @@ function AppPage() {
         });
         toast.success("Resumo técnico actualizado.");
         break;
+
+      case "legenda-bloco": {
+        const linhas: LinhaLegenda[] = aplicarLegenda(
+          a.amostraActiva.legenda ?? [],
+          c.blocos,
+          c.descricao,
+        );
+
+        a.actualizarAmostra(a.amostraActiva.id, { legenda: linhas });
+
+        toast.success(
+          c.blocos.length === 1
+            ? `Bloco ${c.blocos[0]}: ${c.descricao}`
+            : `Blocos ${c.blocos[0]} a ${
+                c.blocos[c.blocos.length - 1]
+              }: ${c.descricao}`,
+        );
+        break;
+      }
+
+      case "apagar-legenda-bloco": {
+        const actual: Diagrama | null = a.amostraActiva.diagrama ?? null;
+
+        a.actualizarAmostra(a.amostraActiva.id, {
+          legenda: removerLinhaLegenda(
+            a.amostraActiva.legenda ?? [],
+            c.bloco,
+          ),
+          diagrama: actual
+            ? {
+                ...actual,
+                marcadores: actual.marcadores.filter(
+                  (m) => m.bloco !== c.bloco,
+                ),
+              }
+            : null,
+        });
+
+        toast.success(`Legenda do bloco ${c.bloco} removida.`);
+        break;
+      }
+
+      case "diagrama":
+        a.setDiagramaAberto(c.aberto);
+        toast.success(c.aberto ? "Diagrama aberto." : "Diagrama fechado.");
+        break;
+
+
 
       case "separar":
         void a.separarAmostras(
@@ -1318,10 +1402,19 @@ function AppPage() {
                 onResumoChange={(id, resumo) =>
                   actualizarAmostra(id, { resumo })
                 }
+                onLegendaChange={(id, legenda) =>
+                  actualizarAmostra(id, { legenda })
+                }
+                onDiagramaChange={(id, diagrama) =>
+                  actualizarAmostra(id, { diagrama })
+                }
                 onAdicionar={adicionarAmostra}
                 onRemover={removerAmostra}
                 onMover={moverAmostra}
+                diagramaAberto={diagramaAberto}
+                onDiagramaAbertoChange={setDiagramaAberto}
               />
+
 
               <div className="flex flex-wrap gap-3">
                 <Button
