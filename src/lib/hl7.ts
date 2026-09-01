@@ -168,6 +168,27 @@ export const gerarORU = ({
         "F",
       ].join("|"),
     );
+
+    for (const l of legendaTexto(a.legenda ?? [])) {
+      obx += 1;
+      segmentos.push(
+        [
+          "OBX",
+          String(obx),
+          "TX",
+          "LEGENDA^Legenda de blocos^L",
+          String(ordem),
+          escaparHL7(l),
+          "",
+          "",
+          "",
+          "",
+          "",
+          "F",
+        ].join("|"),
+      );
+    }
+
   });
 
   // HL7 v2 usa CR como separador de segmento.
