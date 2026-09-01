@@ -992,6 +992,54 @@ function AppPage() {
         toast.success("Resumo técnico actualizado.");
         break;
 
+      case "legenda-bloco": {
+        const linhas: LinhaLegenda[] = aplicarLegenda(
+          a.amostraActiva.legenda ?? [],
+          c.blocos,
+          c.descricao,
+        );
+
+        a.actualizarAmostra(a.amostraActiva.id, { legenda: linhas });
+
+        toast.success(
+          c.blocos.length === 1
+            ? `Bloco ${c.blocos[0]}: ${c.descricao}`
+            : `Blocos ${c.blocos[0]} a ${
+                c.blocos[c.blocos.length - 1]
+              }: ${c.descricao}`,
+        );
+        break;
+      }
+
+      case "apagar-legenda-bloco": {
+        const actual: Diagrama | null = a.amostraActiva.diagrama ?? null;
+
+        a.actualizarAmostra(a.amostraActiva.id, {
+          legenda: removerLinhaLegenda(
+            a.amostraActiva.legenda ?? [],
+            c.bloco,
+          ),
+          diagrama: actual
+            ? {
+                ...actual,
+                marcadores: actual.marcadores.filter(
+                  (m) => m.bloco !== c.bloco,
+                ),
+              }
+            : null,
+        });
+
+        toast.success(`Legenda do bloco ${c.bloco} removida.`);
+        break;
+      }
+
+      case "diagrama":
+        a.setDiagramaAberto(c.aberto);
+        toast.success(c.aberto ? "Diagrama aberto." : "Diagrama fechado.");
+        break;
+
+
+
       case "separar":
         void a.separarAmostras(
           a.amostraActiva.id,
