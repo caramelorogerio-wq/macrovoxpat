@@ -23,6 +23,9 @@ export type Comando =
   | { tipo: "ir-amostra"; indice: number }
   | { tipo: "apagar-amostra" }
   | { tipo: "resumo"; resumo: ResumoComando }
+  | { tipo: "legenda-bloco"; blocos: number[]; descricao: string }
+  | { tipo: "apagar-legenda-bloco"; bloco: number }
+  | { tipo: "diagrama"; aberto: boolean }
   | { tipo: "separar" }
   | { tipo: "otimizar" }
   | { tipo: "guardar" }
@@ -33,6 +36,7 @@ export type Comando =
   | { tipo: "ajuda" }
   | { tipo: "confirmar" }
   | { tipo: "cancelar" };
+
 
 /** Acções que só executam depois de um "confirmar". */
 export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
