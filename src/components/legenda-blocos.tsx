@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DiagramaOrgao } from "@/components/diagrama-orgao";
 import {
+  aplicarLegenda,
   ordenarLegenda,
   proximoBloco,
   removerLinhaLegenda,
   type Diagrama,
   type LinhaLegenda,
 } from "@/lib/legendas";
+
 
 type Props = {
   legenda: LinhaLegenda[];
