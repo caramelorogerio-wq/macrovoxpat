@@ -789,7 +789,7 @@ function AppPage() {
             titulo: a.titulo.trim() || `Amostra ${i + 1}`,
             texto: a.texto.trim(),
             resumo: a.resumo,
-            legenda: legendaTexto(a.legenda ?? []),
+            legenda: legendaTexto(a.legenda ?? [], a.diagrama),
             ...(png ? { diagramaPng: png } : {}),
           };
         }),

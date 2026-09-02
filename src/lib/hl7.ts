@@ -169,7 +169,7 @@ export const gerarORU = ({
       ].join("|"),
     );
 
-    for (const l of legendaTexto(a.legenda ?? [])) {
+    for (const l of legendaTexto(a.legenda ?? [], a.diagrama)) {
       obx += 1;
       segmentos.push(
         [
@@ -224,7 +224,7 @@ export const gerarBundleFhir = ({
           type: { text: titulo },
           note: [
             { text: resumoTexto(a) },
-            ...legendaTexto(a.legenda ?? []).map((text) => ({ text })),
+            ...legendaTexto(a.legenda ?? [], a.diagrama).map((text) => ({ text })),
           ],
 
         },
