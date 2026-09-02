@@ -151,8 +151,18 @@ export function LegendaBlocos({
           blocoActivo={blocoActivo}
           onBlocoActivoChange={setBlocoActivo}
           onChange={onDiagramaChange}
+          onMarcar={(bloco, zona) => {
+            const existente = linhas.find((l) => l.bloco === bloco);
+
+            if (existente?.descricao.trim()) return;
+
+            onLegendaChange(
+              aplicarLegenda(linhas, [bloco], (zona ?? "").trim()),
+            );
+          }}
         />
       )}
+
     </div>
   );
 }
