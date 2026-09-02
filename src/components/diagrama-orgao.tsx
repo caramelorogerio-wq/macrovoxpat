@@ -16,6 +16,8 @@ type Props = {
   blocoActivo: number;
   onBlocoActivoChange: (bloco: number) => void;
   onChange: (diagrama: Diagrama | null) => void;
+  /** Avisa que um bloco foi marcado, para garantir a linha de legenda. */
+  onMarcar?: (bloco: number, zona?: string) => void;
 };
 
 export function DiagramaOrgao({
@@ -24,6 +26,7 @@ export function DiagramaOrgao({
   blocoActivo,
   onBlocoActivoChange,
   onChange,
+  onMarcar,
 }: Props) {
   const [orgaoId, setOrgaoId] = useState(diagrama?.orgao ?? "generico");
 
@@ -35,7 +38,7 @@ export function DiagramaOrgao({
     onChange({ orgao: id, marcadores: diagrama?.marcadores ?? [] });
   };
 
-  const colocar = (x: number, y: number, zona?: string) =>
+  const colocar = (x: number, y: number, zona?: string) => {
     onChange({
       orgao: orgao.id,
       marcadores: [
@@ -49,6 +52,10 @@ export function DiagramaOrgao({
         },
       ],
     });
+
+    onMarcar?.(blocoActivo, zona);
+  };
+
 
   const clicarSvg = (e: React.MouseEvent<SVGSVGElement>) => {
     const alvo = e.currentTarget.getBoundingClientRect();
