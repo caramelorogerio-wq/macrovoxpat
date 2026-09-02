@@ -79,17 +79,22 @@ export const legendaTexto = (
     descricoes.set(l.bloco, l.descricao.trim());
   }
 
+  const marcados = new Set<number>();
+
   for (const m of diagrama?.marcadores ?? []) {
+    marcados.add(m.bloco);
     const actual = descricoes.get(m.bloco);
     if (!actual) descricoes.set(m.bloco, (m.zona ?? "").trim());
   }
 
   return [...descricoes.entries()]
+    .filter(([bloco, descricao]) => descricao || marcados.has(bloco))
     .sort((a, b) => a[0] - b[0])
     .map(([bloco, descricao]) =>
       descricao ? `Bloco ${bloco} — ${descricao}` : `Bloco ${bloco}`,
     );
 };
+
 
 
 /** Normaliza dados vindos da base de dados (JSON sem tipos garantidos). */
