@@ -64,11 +64,33 @@ export function proximoBloco(linhas: LinhaLegenda[]): number {
   return n;
 }
 
-/** Linhas em texto: "Bloco 1 — margem proximal". */
-export const legendaTexto = (linhas: LinhaLegenda[]): string[] =>
-  ordenarLegenda(linhas)
-    .filter((l) => l.descricao.trim() || l.marcadorId)
-    .map((l) => `Bloco ${l.bloco} — ${l.descricao.trim() || "(sem descrição)"}`);
+/**
+ * Linhas em texto: "Bloco 1 — margem proximal".
+ * Inclui os blocos marcados no diagrama que ainda não têm linha de legenda,
+ * usando a zona anatómica como descrição.
+ */
+export const legendaTexto = (
+  linhas: LinhaLegenda[],
+  diagrama?: Diagrama | null,
+): string[] => {
+  const descricoes = new Map<number, string>();
+
+  for (const l of ordenarLegenda(linhas)) {
+    descricoes.set(l.bloco, l.descricao.trim());
+  }
+
+  for (const m of diagrama?.marcadores ?? []) {
+    const actual = descricoes.get(m.bloco);
+    if (!actual) descricoes.set(m.bloco, (m.zona ?? "").trim());
+  }
+
+  return [...descricoes.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([bloco, descricao]) =>
+      descricao ? `Bloco ${bloco} — ${descricao}` : `Bloco ${bloco}`,
+    );
+};
+
 
 /** Normaliza dados vindos da base de dados (JSON sem tipos garantidos). */
 export function lerLegenda(valor: unknown): LinhaLegenda[] {
