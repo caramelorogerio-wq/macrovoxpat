@@ -6,9 +6,7 @@ import { Input } from "@/components/ui/input";
 import { DiagramaOrgao } from "@/components/diagrama-orgao";
 import {
   aplicarLegenda,
-  ordenarLegenda,
   proximoBloco,
-  removerLinhaLegenda,
   type Diagrama,
   type LinhaLegenda,
 } from "@/lib/legendas";
@@ -43,7 +41,7 @@ export function LegendaBlocos({
 
   const [blocoActivo, setBlocoActivo] = useState(1);
 
-  const linhas = ordenarLegenda(legenda);
+  const linhas = legenda;
 
   const adicionar = () => {
     const bloco = proximoBloco(linhas);
