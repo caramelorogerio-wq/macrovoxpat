@@ -6,9 +6,7 @@ import { Input } from "@/components/ui/input";
 import { DiagramaOrgao } from "@/components/diagrama-orgao";
 import {
   aplicarLegenda,
-  ordenarLegenda,
   proximoBloco,
-  removerLinhaLegenda,
   type Diagrama,
   type LinhaLegenda,
 } from "@/lib/legendas";
@@ -43,7 +41,7 @@ export function LegendaBlocos({
 
   const [blocoActivo, setBlocoActivo] = useState(1);
 
-  const linhas = ordenarLegenda(legenda);
+  const linhas = legenda;
 
   const adicionar = () => {
     const bloco = proximoBloco(linhas);
@@ -81,26 +79,52 @@ export function LegendaBlocos({
         </p>
       ) : (
         <ul className="space-y-2">
-          {linhas.map((l) => (
-            <li key={l.bloco} className="flex items-center gap-2">
-              <span
-                className={`w-20 shrink-0 rounded-md px-2 py-1 text-xs font-medium ${
-                  l.bloco === blocoActivo
-                    ? "bg-clinical/20 text-clinical"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Bloco {l.bloco}
+          {linhas.map((l, i) => (
+            <li key={i} className="flex items-center gap-2">
+              <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                Bloco
               </span>
+
+              <Input
+                type="number"
+                min={1}
+                value={l.bloco}
+                onChange={(e) => {
+                  const novo = Number(e.target.value);
+                  if (!Number.isFinite(novo)) return;
+
+                  const anterior = l.bloco;
+
+                  onLegendaChange(
+                    linhas.map((item, j) =>
+                      j === i ? { ...item, bloco: novo } : item,
+                    ),
+                  );
+
+                  setBlocoActivo(novo);
+
+                  if (diagrama) {
+                    onDiagramaChange({
+                      ...diagrama,
+                      marcadores: diagrama.marcadores.map((m) =>
+                        m.bloco === anterior ? { ...m, bloco: novo } : m,
+                      ),
+                    });
+                  }
+                }}
+                onFocus={() => setBlocoActivo(l.bloco)}
+                aria-label={`Número do bloco (linha ${i + 1})`}
+                className={`h-8 w-16 shrink-0 text-sm ${
+                  l.bloco === blocoActivo ? "border-clinical text-clinical" : ""
+                }`}
+              />
 
               <Input
                 value={l.descricao}
                 onChange={(e) =>
                   onLegendaChange(
-                    linhas.map((item) =>
-                      item.bloco === l.bloco
-                        ? { ...item, descricao: e.target.value }
-                        : item,
+                    linhas.map((item, j) =>
+                      j === i ? { ...item, descricao: e.target.value } : item,
                     ),
                   )
                 }
@@ -116,7 +140,7 @@ export function LegendaBlocos({
                 className="size-8 shrink-0"
                 aria-label={`Remover legenda do bloco ${l.bloco}`}
                 onClick={() => {
-                  onLegendaChange(removerLinhaLegenda(linhas, l.bloco));
+                  onLegendaChange(linhas.filter((_, j) => j !== i));
 
                   if (diagrama) {
                     onDiagramaChange({
@@ -133,6 +157,7 @@ export function LegendaBlocos({
             </li>
           ))}
         </ul>
+
       )}
 
       <Button
