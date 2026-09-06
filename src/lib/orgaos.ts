@@ -1,219 +1,343 @@
 /**
- * Biblioteca de esquemas anatómicos simples usados na legenda de blocos.
+ * Biblioteca de esquemas anatómicos usados na legenda de blocos.
  *
- * Cada esquema é desenhado num viewBox normalizado 0 0 100 100 e é composto
- * por zonas (`path`) clicáveis, mais linhas de contorno decorativas. Os
- * desenhos são esquemáticos — servem para localizar os blocos, não para
- * representar anatomia à escala.
+ * Cada esquema é uma imagem real da peça cirúrgica (servida pelo CDN) com
+ * zonas nomeadas sobrepostas. As zonas são rectângulos em coordenadas
+ * normalizadas 0–100 (percentagem da largura e da altura da imagem), tal
+ * como os marcadores dos blocos.
  */
+
+import colectomiaDireita from "@/assets/esquemas/esquema-anatomico-da-colectomia-direita.png.asset.json";
+import colectomiaEsquerda from "@/assets/esquemas/esquema-anatomico-da-colectomia-esquerda.png.asset.json";
+import colectomiaTotal from "@/assets/esquemas/esquema-anatomico-da-colectomia-total.webp.asset.json";
+import dpc from "@/assets/esquemas/esquema-anatomico-da-dpc.webp.asset.json";
+import prostatectomia from "@/assets/esquemas/esquema-anatomico-da-prostatectomia-radical.png.asset.json";
+import raRecto from "@/assets/esquemas/esquema-anatomico-da-rarecto.png.asset.json";
+import rim from "@/assets/esquemas/esquema-anatomico-da-rim.webp.asset.json";
+import sigmoide from "@/assets/esquemas/esquema-anatomico-da-sigmoide.png.asset.json";
+import vesicula from "@/assets/esquemas/esquema-anatomico-da-vesicula-biliar.png.asset.json";
+import esofago from "@/assets/esquemas/esquema-anatomico-do-esofago.png.asset.json";
 
 export type ZonaOrgao = {
   id: string;
   nome: string;
-  /** Path SVG dentro do viewBox 0 0 100 100. */
+  /** Path SVG em coordenadas normalizadas 0–100. */
   d: string;
 };
 
 export type Orgao = {
   id: string;
   nome: string;
+  /** URL da imagem do esquema. */
+  imagem: string;
+  /** Dimensões originais da imagem, usadas para manter a proporção. */
+  largura: number;
+  altura: number;
   zonas: ZonaOrgao[];
-  /** Traços de contorno sem interacção. */
-  contorno?: string[];
 };
 
-const rect = (x: number, y: number, l: number, a: number) =>
+/** Rectângulo em percentagem (x, y, largura, altura). */
+const cx = (x: number, y: number, l: number, a: number) =>
   `M${x} ${y} H${x + l} V${y + a} H${x} Z`;
 
 export const ORGAOS: Orgao[] = [
   {
-    id: "pele",
-    nome: "Pele (excisão fusiforme)",
-    contorno: ["M6 50 C26 16 74 16 94 50 C74 84 26 84 6 50 Z"],
+    id: "colectomia-direita",
+    nome: "Colectomia direita",
+    imagem: colectomiaDireita.url,
+    largura: 1312,
+    altura: 1199,
     zonas: [
+      { id: "flexura-hepatica", nome: "Flexura hepática", d: cx(30, 5, 16, 12) },
+      { id: "colon-transverso", nome: "Cólon transverso", d: cx(52, 4, 33, 26) },
       {
-        id: "lesao",
-        nome: "Lesão central",
-        d: "M38 50 A12 12 0 1 0 62 50 A12 12 0 1 0 38 50 Z",
+        id: "margem-transverso",
+        nome: "Margem de secção do cólon transverso",
+        d: cx(85, 6, 8, 28),
+      },
+      { id: "colon-ascendente", nome: "Cólon ascendente", d: cx(30, 30, 20, 35) },
+      { id: "valvula-ileocecal", nome: "Válvula ileocecal", d: cx(42, 66, 11, 7) },
+      { id: "cego", nome: "Cego", d: cx(28, 73, 20, 14) },
+      { id: "apendice", nome: "Apêndice", d: cx(46, 86, 16, 12) },
+      { id: "ileon-terminal", nome: "Íleon terminal", d: cx(55, 63, 18, 16) },
+      {
+        id: "margem-ileal",
+        nome: "Margem de secção ileal",
+        d: cx(66, 62, 8, 20),
       },
       {
-        id: "margem-a",
-        nome: "Margem lateral A (vértice esquerdo)",
-        d: "M6 50 C14 34 22 27 30 24 L30 76 C22 73 14 66 6 50 Z",
-      },
-      {
-        id: "margem-b",
-        nome: "Margem lateral B (vértice direito)",
-        d: "M94 50 C86 34 78 27 70 24 L70 76 C78 73 86 66 94 50 Z",
-      },
-      {
-        id: "margem-superior",
-        nome: "Margem superior",
-        d: "M30 24 C42 18 58 18 70 24 L70 42 L30 42 Z",
-      },
-      {
-        id: "margem-inferior",
-        nome: "Margem inferior",
-        d: "M30 76 C42 82 58 82 70 76 L70 58 L30 58 Z",
-      },
-      {
-        id: "profunda",
-        nome: "Margem profunda",
-        d: rect(30, 42, 40, 16),
+        id: "mesocolon",
+        nome: "Mesocólon / gânglios linfáticos",
+        d: cx(50, 20, 16, 42),
       },
     ],
   },
 
   {
-    id: "colon",
-    nome: "Cólon / recto",
-    contorno: [
-      "M10 30 H90 M10 70 H90",
-      "M10 30 V70 M90 30 V70",
-    ],
+    id: "colectomia-esquerda",
+    nome: "Colectomia esquerda",
+    imagem: colectomiaEsquerda.url,
+    largura: 1208,
+    altura: 1302,
     zonas: [
-      { id: "margem-proximal", nome: "Margem proximal", d: rect(10, 30, 14, 40) },
-      { id: "margem-distal", nome: "Margem distal", d: rect(76, 30, 14, 40) },
+      { id: "colon-transverso", nome: "Cólon transverso", d: cx(10, 10, 26, 18) },
       {
-        id: "tumor",
-        nome: "Lesão / tumor",
-        d: "M38 50 A12 12 0 1 0 62 50 A12 12 0 1 0 38 50 Z",
+        id: "margem-transverso",
+        nome: "Margem de secção do cólon transverso",
+        d: cx(5, 8, 7, 22),
       },
-      { id: "parede", nome: "Parede — bordo anti-mesentérico", d: rect(24, 30, 52, 10) },
-      { id: "serosa", nome: "Serosa / margem radial", d: rect(24, 60, 52, 10) },
-      { id: "ganglios", nome: "Gânglios do mesentério", d: rect(24, 74, 52, 16) },
+      { id: "flexura-esplenica", nome: "Flexura esplénica", d: cx(52, 5, 20, 14) },
+      { id: "colon-descendente", nome: "Cólon descendente", d: cx(48, 28, 22, 34) },
+      { id: "colon-sigmoide", nome: "Cólon sigmoide", d: cx(42, 72, 30, 18) },
+      { id: "mesocolon-sigmoide", nome: "Mesocólon sigmoide", d: cx(25, 58, 22, 20) },
+      {
+        id: "margem-distal",
+        nome: "Recto / margem de secção distal",
+        d: cx(12, 74, 17, 18),
+      },
+      {
+        id: "ganglios",
+        nome: "Gânglios do mesocólon",
+        d: cx(30, 30, 18, 26),
+      },
     ],
   },
 
   {
-    id: "estomago",
-    nome: "Estômago",
-    contorno: ["M28 14 C12 34 16 70 40 86 C64 94 84 76 84 54 C84 34 66 16 46 12 Z"],
+    id: "colectomia-total",
+    nome: "Colectomia total",
+    imagem: colectomiaTotal.url,
+    largura: 1339,
+    altura: 1174,
     zonas: [
-      { id: "cardia", nome: "Cárdia / margem proximal", d: "M28 14 C22 24 22 32 26 38 L46 30 L46 12 Z" },
-      { id: "fundo", nome: "Fundo", d: "M46 12 C64 16 78 30 80 44 L54 46 L46 30 Z" },
-      { id: "corpo", nome: "Corpo", d: "M26 38 C24 52 28 64 38 72 L58 66 L54 46 Z" },
-      { id: "antro", nome: "Antro", d: "M38 72 C48 82 64 84 76 74 L74 58 L58 66 Z" },
-      { id: "piloro", nome: "Piloro / margem distal", d: "M76 74 C84 66 86 58 84 52 L74 58 Z" },
-      { id: "lesao", nome: "Lesão", d: "M44 44 A9 9 0 1 0 62 44 A9 9 0 1 0 44 44 Z" },
+      { id: "flexura-hepatica", nome: "Flexura hepática", d: cx(18, 8, 14, 12) },
+      { id: "colon-transverso", nome: "Cólon transverso", d: cx(35, 10, 28, 16) },
+      { id: "flexura-esplenica", nome: "Flexura esplénica", d: cx(70, 8, 15, 12) },
+      { id: "colon-ascendente", nome: "Cólon ascendente", d: cx(18, 34, 15, 32) },
+      { id: "colon-descendente", nome: "Cólon descendente", d: cx(68, 34, 16, 32) },
+      { id: "cego", nome: "Cego", d: cx(16, 66, 15, 14) },
+      { id: "apendice", nome: "Apêndice", d: cx(22, 80, 14, 14) },
+      { id: "colon-sigmoide", nome: "Cólon sigmoide", d: cx(60, 72, 18, 16) },
+      { id: "recto", nome: "Recto / margem distal", d: cx(45, 88, 14, 11) },
+      {
+        id: "mesocolon",
+        nome: "Mesocólon / gânglios linfáticos",
+        d: cx(36, 32, 26, 36),
+      },
     ],
   },
 
   {
-    id: "mama",
-    nome: "Mama (quadrantes)",
-    contorno: ["M50 50 A38 38 0 1 0 50 50.01 Z", "M12 50 H88 M50 12 V88"],
+    id: "sigmoidectomia",
+    nome: "Sigmoidectomia",
+    imagem: sigmoide.url,
+    largura: 1230,
+    altura: 1278,
     zonas: [
-      { id: "qse", nome: "Quadrante superior externo", d: "M50 50 L50 12 A38 38 0 0 1 88 50 Z" },
-      { id: "qsi", nome: "Quadrante superior interno", d: "M50 50 L12 50 A38 38 0 0 1 50 12 Z" },
-      { id: "qie", nome: "Quadrante inferior externo", d: "M50 50 L88 50 A38 38 0 0 1 50 88 Z" },
-      { id: "qii", nome: "Quadrante inferior interno", d: "M50 50 L50 88 A38 38 0 0 1 12 50 Z" },
-      { id: "mamilo", nome: "Complexo mamilo-areolar", d: "M42 50 A8 8 0 1 0 58 50 A8 8 0 1 0 42 50 Z" },
+      {
+        id: "margem-proximal",
+        nome: "Margem de ressecção proximal (cólon descendente distal)",
+        d: cx(34, 2, 26, 10),
+      },
+      { id: "colon-sigmoide", nome: "Cólon sigmoide (aberto)", d: cx(34, 30, 24, 34) },
+      { id: "mesocolon-sigmoide", nome: "Mesocólon sigmoide", d: cx(60, 32, 24, 26) },
+      {
+        id: "margem-distal",
+        nome: "Margem de ressecção distal (recto proximal)",
+        d: cx(34, 88, 26, 10),
+      },
+      { id: "ganglios", nome: "Gânglios do mesocólon", d: cx(72, 46, 20, 22) },
     ],
   },
 
   {
-    id: "utero",
-    nome: "Útero e colo",
-    contorno: ["M30 16 H70 L74 54 C74 72 62 86 50 90 C38 86 26 72 26 54 Z"],
+    id: "ra-recto",
+    nome: "Ressecção abdominoperineal do recto",
+    imagem: raRecto.url,
+    largura: 1230,
+    altura: 1278,
     zonas: [
-      { id: "endometrio", nome: "Endométrio", d: "M42 22 H58 L58 56 L50 62 L42 56 Z" },
-      { id: "miometrio-ant", nome: "Miométrio anterior", d: "M30 16 H42 L42 56 L34 62 L28 40 Z" },
-      { id: "miometrio-post", nome: "Miométrio posterior", d: "M70 16 H58 L58 56 L66 62 L72 40 Z" },
-      { id: "colo", nome: "Colo do útero", d: "M38 66 H62 C60 80 56 87 50 90 C44 87 40 80 38 66 Z" },
-      { id: "anexos", nome: "Anexos / paramétrios", d: rect(8, 16, 14, 30) },
+      {
+        id: "margem-proximal",
+        nome: "Margem de ressecção proximal (cólon sigmoide)",
+        d: cx(34, 3, 28, 9),
+      },
+      { id: "colon-sigmoide", nome: "Cólon sigmoide", d: cx(36, 14, 24, 18) },
+      { id: "mesocolon-sigmoide", nome: "Mesocólon sigmoide", d: cx(58, 18, 22, 18) },
+      { id: "recto", nome: "Recto (aberto)", d: cx(36, 44, 24, 28) },
+      { id: "mesorrecto", nome: "Mesorrecto", d: cx(58, 44, 22, 28) },
+      {
+        id: "margem-distal",
+        nome: "Margem de ressecção distal (canal anal)",
+        d: cx(36, 76, 24, 10),
+      },
+      { id: "anoderma", nome: "Anoderma (pele perianal)", d: cx(42, 88, 22, 10) },
     ],
   },
 
   {
-    id: "prostata",
-    nome: "Próstata",
-    contorno: ["M50 14 C74 14 88 34 84 58 C80 80 64 90 50 90 C36 90 20 80 16 58 C12 34 26 14 50 14 Z", "M50 14 V90"],
+    id: "prostatectomia",
+    nome: "Prostatectomia radical",
+    imagem: prostatectomia.url,
+    largura: 1312,
+    altura: 1199,
     zonas: [
-      { id: "apice-d", nome: "Ápex direito", d: "M50 66 C64 66 74 74 74 80 C66 88 58 90 50 90 Z" },
-      { id: "apice-e", nome: "Ápex esquerdo", d: "M50 66 C36 66 26 74 26 80 C34 88 42 90 50 90 Z" },
-      { id: "media-d", nome: "Terço médio direito", d: "M50 40 H82 L80 66 H50 Z" },
-      { id: "media-e", nome: "Terço médio esquerdo", d: "M50 40 H18 L20 66 H50 Z" },
-      { id: "base-d", nome: "Base direita", d: "M50 14 C70 14 82 26 82 40 H50 Z" },
-      { id: "base-e", nome: "Base esquerda", d: "M50 14 C30 14 18 26 18 40 H50 Z" },
-    ],
-  },
-
-  {
-    id: "pulmao",
-    nome: "Pulmão",
-    contorno: ["M56 12 C34 20 20 44 24 68 C28 86 44 92 58 88 L58 12 Z"],
-    zonas: [
-      { id: "lobo-superior", nome: "Lobo superior", d: "M56 12 C40 18 30 30 28 44 L58 44 Z" },
-      { id: "lobo-medio", nome: "Lobo médio / língula", d: "M28 44 H58 V64 H26 Z" },
-      { id: "lobo-inferior", nome: "Lobo inferior", d: "M26 64 H58 V88 C44 92 28 86 26 64 Z" },
-      { id: "hilo", nome: "Hilo / brônquio e margem vascular", d: rect(58, 40, 22, 18) },
-      { id: "pleura", nome: "Pleura", d: "M24 68 C20 44 34 20 56 12 L52 12 C30 22 16 46 20 70 Z" },
-      { id: "lesao", nome: "Lesão / nódulo", d: "M34 52 A8 8 0 1 0 50 52 A8 8 0 1 0 34 52 Z" },
+      {
+        id: "colo-vesical",
+        nome: "Colo vesical (margem de secção)",
+        d: cx(43, 14, 14, 12),
+      },
+      {
+        id: "deferente-d",
+        nome: "Canal deferente direito (seccionado)",
+        d: cx(17, 11, 12, 7),
+      },
+      {
+        id: "vesicula-seminal-d",
+        nome: "Vesícula seminal direita (seccionada)",
+        d: cx(17, 18, 14, 9),
+      },
+      {
+        id: "deferente-e",
+        nome: "Canal deferente esquerdo (seccionado)",
+        d: cx(71, 11, 13, 7),
+      },
+      {
+        id: "vesicula-seminal-e",
+        nome: "Vesícula seminal esquerda (seccionada)",
+        d: cx(69, 18, 15, 9),
+      },
+      { id: "base", nome: "Base (corte com vesículas seminais)", d: cx(34, 33, 32, 12) },
+      { id: "uretra", nome: "Uretra prostática", d: cx(46, 36, 10, 8) },
+      { id: "capsula", nome: "Cápsula prostática", d: cx(60, 46, 12, 9) },
+      { id: "medio-sup", nome: "Terço médio superior", d: cx(34, 47, 32, 11) },
+      { id: "medio-inf", nome: "Terço médio inferior", d: cx(34, 60, 32, 11) },
+      { id: "apice", nome: "Ápice", d: cx(36, 73, 28, 11) },
+      {
+        id: "margem-apical",
+        nome: "Margem apical (de secção)",
+        d: cx(44, 84, 18, 8),
+      },
     ],
   },
 
   {
     id: "rim",
-    nome: "Rim",
-    contorno: ["M62 12 C34 16 22 36 24 54 C26 76 44 90 64 88 C58 68 58 34 62 12 Z"],
+    nome: "Rim (nefrectomia)",
+    imagem: rim.url,
+    largura: 1312,
+    altura: 1199,
     zonas: [
-      { id: "polo-superior", nome: "Pólo superior", d: "M62 12 C42 14 30 26 28 38 L60 38 Z" },
-      { id: "medio", nome: "Terço médio", d: "M28 38 H60 V62 H26 Z" },
-      { id: "polo-inferior", nome: "Pólo inferior", d: "M26 62 H60 V88 C44 90 28 78 26 62 Z" },
-      { id: "seio", nome: "Seio renal / pélvis", d: rect(62, 40, 20, 20) },
-      { id: "gordura", nome: "Gordura perirrenal / cápsula", d: "M64 88 C58 68 58 34 62 12 L70 14 C66 36 66 68 72 88 Z" },
-      { id: "ureter", nome: "Margem do uréter", d: rect(78, 66, 14, 12) },
+      { id: "capsula", nome: "Cápsula renal", d: cx(26, 5, 13, 11) },
+      { id: "cortex", nome: "Córtex renal", d: cx(55, 4, 18, 11) },
+      { id: "medula", nome: "Pirâmide renal (medula)", d: cx(57, 17, 16, 12) },
+      { id: "papila", nome: "Papila renal", d: cx(54, 29, 13, 8) },
+      { id: "calice-menor", nome: "Cálice menor", d: cx(57, 38, 14, 9) },
+      { id: "calice-maior", nome: "Cálice maior", d: cx(57, 48, 14, 9) },
+      { id: "pelve", nome: "Pelve renal", d: cx(44, 52, 14, 11) },
+      { id: "arteria", nome: "Artéria renal (margem vascular)", d: cx(19, 35, 16, 10) },
+      { id: "veia", nome: "Veia renal (margem vascular)", d: cx(21, 45, 16, 9) },
+      { id: "ureter", nome: "Ureter (margem)", d: cx(25, 78, 16, 13) },
     ],
   },
 
   {
-    id: "tiroide",
-    nome: "Tiróide",
-    contorno: ["M46 34 H54 V60 H46 Z"],
+    id: "vesicula-biliar",
+    nome: "Vesícula biliar (colecistectomia)",
+    imagem: vesicula.url,
+    largura: 1312,
+    altura: 1199,
     zonas: [
-      { id: "lobo-d-sup", nome: "Lobo direito — terço superior", d: "M54 26 C70 24 82 32 82 44 H54 Z" },
-      { id: "lobo-d-inf", nome: "Lobo direito — terço inferior", d: "M54 44 H82 C82 62 70 74 54 72 Z" },
-      { id: "lobo-e-sup", nome: "Lobo esquerdo — terço superior", d: "M46 26 C30 24 18 32 18 44 H46 Z" },
-      { id: "lobo-e-inf", nome: "Lobo esquerdo — terço inferior", d: "M46 44 H18 C18 62 30 74 46 72 Z" },
-      { id: "istmo", nome: "Istmo", d: rect(46, 34, 8, 26) },
+      { id: "ducto-cistico", nome: "Ducto cístico (margem)", d: cx(69, 7, 14, 10) },
+      { id: "colo", nome: "Colo", d: cx(56, 17, 13, 10) },
+      { id: "arteria-cistica", nome: "Artéria cística", d: cx(73, 31, 12, 10) },
+      { id: "ducto-hepatico", nome: "Ducto hepático comum", d: cx(85, 29, 12, 12) },
+      { id: "corpo", nome: "Corpo da vesícula biliar (aberto)", d: cx(30, 39, 25, 17) },
+      { id: "mucosa", nome: "Mucosa com pregas", d: cx(30, 57, 22, 12) },
+      { id: "serosa", nome: "Serosa", d: cx(52, 73, 19, 12) },
+      { id: "fundo", nome: "Fundo", d: cx(13, 85, 17, 11) },
     ],
   },
 
   {
-    id: "vesicula",
-    nome: "Vesícula biliar / apêndice",
-    contorno: ["M50 10 C64 20 70 40 66 62 C62 82 54 90 46 90 C38 90 30 78 30 60 C30 38 38 20 50 10 Z"],
+    id: "dpc",
+    nome: "Duodenopancreatectomia cefálica (Whipple)",
+    imagem: dpc.url,
+    largura: 1402,
+    altura: 1122,
     zonas: [
-      { id: "colo", nome: "Colo / margem cirúrgica", d: "M50 10 C58 16 62 24 63 32 H37 C39 24 43 16 50 10 Z" },
-      { id: "corpo", nome: "Corpo", d: "M37 32 H63 L64 62 H33 Z" },
-      { id: "fundo", nome: "Fundo / ponta", d: "M33 62 H64 C60 82 54 90 46 90 C38 90 33 78 33 62 Z" },
-      { id: "lesao", nome: "Lesão / espessamento", d: "M41 46 A8 8 0 1 0 57 46 A8 8 0 1 0 41 46 Z" },
+      { id: "estomago", nome: "Estômago (porção distal)", d: cx(8, 19, 20, 26) },
+      {
+        id: "margem-gastrica",
+        nome: "Margem gástrica (de secção)",
+        d: cx(3, 49, 12, 20),
+      },
+      { id: "duodeno", nome: "Duodeno aberto", d: cx(29, 20, 15, 68) },
+      {
+        id: "margem-duodenal",
+        nome: "Margem duodenal (de secção)",
+        d: cx(25, 72, 11, 16),
+      },
+      { id: "ampola", nome: "Ampola de Vater", d: cx(42, 49, 11, 13) },
+      { id: "coledoco", nome: "Colédoco", d: cx(49, 29, 12, 15) },
+      {
+        id: "ducto-pancreatico",
+        nome: "Ducto pancreático principal",
+        d: cx(47, 51, 13, 12),
+      },
+      {
+        id: "margem-biliar",
+        nome: "Margem biliar (de secção)",
+        d: cx(67, 19, 12, 13),
+      },
+      { id: "vesicula", nome: "Vesícula biliar", d: cx(71, 7, 14, 14) },
+      { id: "cabeca-pancreas", nome: "Cabeça do pâncreas", d: cx(57, 39, 22, 16) },
+      {
+        id: "margem-pancreatica",
+        nome: "Margem de secção pancreática (colo do pâncreas)",
+        d: cx(80, 31, 15, 14),
+      },
+      {
+        id: "leito-vascular",
+        nome: "Leito vascular (veia mesentérica superior)",
+        d: cx(65, 57, 14, 11),
+      },
+      {
+        id: "margem-retroperitoneal",
+        nome: "Margem retroperitoneal (de secção)",
+        d: cx(78, 61, 15, 14),
+      },
+      { id: "processo-uncinado", nome: "Processo uncinado", d: cx(55, 69, 17, 12) },
+      {
+        id: "margem-uncinada",
+        nome: "Margem uncinada (de secção)",
+        d: cx(67, 77, 14, 13),
+      },
     ],
   },
 
   {
-    id: "ganglio",
-    nome: "Gânglios / esvaziamento",
-    contorno: [],
+    id: "esofago",
+    nome: "Esófago (esofagectomia)",
+    imagem: esofago.url,
+    largura: 1024,
+    altura: 1536,
     zonas: [
-      { id: "nivel-1", nome: "Nível I", d: rect(10, 14, 36, 22) },
-      { id: "nivel-2", nome: "Nível II", d: rect(54, 14, 36, 22) },
-      { id: "nivel-3", nome: "Nível III", d: rect(10, 44, 36, 22) },
-      { id: "nivel-4", nome: "Nível IV", d: rect(54, 44, 36, 22) },
-      { id: "sentinela", nome: "Gânglio sentinela", d: rect(32, 74, 36, 16) },
-    ],
-  },
-
-  {
-    id: "generico",
-    nome: "Esquema genérico (peça)",
-    contorno: ["M12 18 H88 V82 H12 Z", "M50 18 V82", "M12 50 H88"],
-    zonas: [
-      { id: "sup-e", nome: "Quadrante superior esquerdo", d: rect(12, 18, 38, 32) },
-      { id: "sup-d", nome: "Quadrante superior direito", d: rect(50, 18, 38, 32) },
-      { id: "inf-e", nome: "Quadrante inferior esquerdo", d: rect(12, 50, 38, 32) },
-      { id: "inf-d", nome: "Quadrante inferior direito", d: rect(50, 50, 38, 32) },
+      { id: "faringe", nome: "Faringe / margem proximal", d: cx(38, 1, 22, 8) },
+      {
+        id: "esfincter-superior",
+        nome: "Esfíncter esofágico superior",
+        d: cx(42, 10, 12, 7),
+      },
+      { id: "cervical", nome: "Esófago cervical", d: cx(42, 21, 13, 10) },
+      { id: "toracico", nome: "Esófago torácico", d: cx(43, 41, 13, 11) },
+      { id: "diafragma", nome: "Diafragma", d: cx(56, 61, 18, 8) },
+      { id: "abdominal", nome: "Esófago abdominal", d: cx(43, 70, 13, 9) },
+      {
+        id: "juncao",
+        nome: "Junção gastroesofágica",
+        d: cx(43, 80, 14, 8),
+      },
     ],
   },
 ];
