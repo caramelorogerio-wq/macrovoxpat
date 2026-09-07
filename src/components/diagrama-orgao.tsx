@@ -28,7 +28,10 @@ export function DiagramaOrgao({
   onChange,
   onMarcar,
 }: Props) {
-  const [orgaoId, setOrgaoId] = useState(diagrama?.orgao ?? "generico");
+  const [orgaoId, setOrgaoId] = useState(
+    diagrama?.orgao ?? ORGAOS[0]!.id,
+  );
+
 
   const orgao = orgaoPorId(diagrama?.orgao ?? orgaoId) ?? ORGAOS[0]!;
   const marcadores = diagrama?.marcadores ?? [];
