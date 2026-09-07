@@ -375,7 +375,11 @@ export async function gerarRelatorioDocx({
               new ImageRun({
                 type: "png",
                 data: amostra.diagramaPng,
-                transformation: { width: 240, height: 240 },
+                transformation: {
+                  width: 300,
+                  height: Math.round(300 / (amostra.diagramaProporcao || 1)),
+                },
+
                 altText: {
                   title: "Esquema do órgão",
                   description:
