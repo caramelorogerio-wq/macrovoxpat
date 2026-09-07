@@ -17,6 +17,8 @@ import rim from "@/assets/esquemas/esquema-anatomico-da-rim.webp.asset.json";
 import sigmoide from "@/assets/esquemas/esquema-anatomico-da-sigmoide.png.asset.json";
 import vesicula from "@/assets/esquemas/esquema-anatomico-da-vesicula-biliar.png.asset.json";
 import esofago from "@/assets/esquemas/esquema-anatomico-do-esofago.png.asset.json";
+import estomago from "@/assets/esquemas/esquema-anatomico-do-estomago.png.asset.json";
+import figado from "@/assets/esquemas/esquema-anatomico-do-figado.png.asset.json";
 
 export type ZonaOrgao = {
   id: string;
