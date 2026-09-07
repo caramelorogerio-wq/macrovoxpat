@@ -62,6 +62,9 @@ export type AmostraDocx = {
   legenda?: string[];
   /** Imagem PNG do esquema do órgão com os blocos marcados. */
   diagramaPng?: Uint8Array;
+  /** Proporção largura/altura da imagem do esquema (por omissão 1). */
+  diagramaProporcao?: number;
+
 };
 
 
