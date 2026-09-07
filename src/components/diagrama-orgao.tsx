@@ -28,7 +28,10 @@ export function DiagramaOrgao({
   onChange,
   onMarcar,
 }: Props) {
-  const [orgaoId, setOrgaoId] = useState(diagrama?.orgao ?? "generico");
+  const [orgaoId, setOrgaoId] = useState(
+    diagrama?.orgao ?? ORGAOS[0]!.id,
+  );
+
 
   const orgao = orgaoPorId(diagrama?.orgao ?? orgaoId) ?? ORGAOS[0]!;
   const marcadores = diagrama?.marcadores ?? [];
@@ -111,17 +114,30 @@ export function DiagramaOrgao({
       <div className="flex flex-wrap gap-4">
         <svg
           viewBox="0 0 100 100"
+          preserveAspectRatio="none"
           onClick={clicarSvg}
           role="img"
           aria-label={`Esquema de ${orgao.nome}`}
-          className="h-64 w-64 shrink-0 cursor-crosshair rounded-md border border-border bg-background"
+          style={{ aspectRatio: `${orgao.largura} / ${orgao.altura}` }}
+          className="h-auto w-full max-w-sm shrink-0 cursor-crosshair rounded-md border border-border bg-background"
         >
+          <image
+            href={orgao.imagem}
+            x={0}
+            y={0}
+            width={100}
+            height={100}
+            preserveAspectRatio="none"
+            pointerEvents="none"
+          />
+
           {orgao.zonas.map((z) => (
             <path
               key={z.id}
               d={z.d}
-              className="fill-secondary stroke-border transition-colors hover:fill-clinical/30"
-              strokeWidth={0.5}
+              fill="transparent"
+              className="stroke-transparent transition-colors hover:fill-clinical/25 hover:stroke-primary"
+              strokeWidth={0.4}
               onClick={(e) => {
                 e.stopPropagation();
                 const alvo = (
@@ -136,23 +152,18 @@ export function DiagramaOrgao({
             </path>
           ))}
 
-          {(orgao.contorno ?? []).map((d, i) => (
-            <path
-              key={`c-${i}`}
-              d={d}
-              fill="none"
-              className="stroke-primary"
-              strokeWidth={0.9}
-              pointerEvents="none"
-            />
-          ))}
-
           {marcadores.map((m) => (
-            <g key={m.id} pointerEvents="none">
-              <circle cx={m.x} cy={m.y} r={4.6} className="fill-primary" />
+            <g
+              key={m.id}
+              pointerEvents="none"
+              transform={`translate(${m.x} ${m.y}) scale(1 ${
+                orgao.largura / orgao.altura
+              })`}
+            >
+              <circle cx={0} cy={0} r={4.6} className="fill-primary" />
               <text
-                x={m.x}
-                y={m.y + 1.9}
+                x={0}
+                y={1.9}
                 textAnchor="middle"
                 fontSize={5.2}
                 className="fill-primary-foreground"
@@ -162,6 +173,7 @@ export function DiagramaOrgao({
             </g>
           ))}
         </svg>
+
 
         <div className="min-w-[180px] flex-1 space-y-2">
           <p className="text-xs text-muted-foreground">

@@ -62,6 +62,9 @@ export type AmostraDocx = {
   legenda?: string[];
   /** Imagem PNG do esquema do órgão com os blocos marcados. */
   diagramaPng?: Uint8Array;
+  /** Proporção largura/altura da imagem do esquema (por omissão 1). */
+  diagramaProporcao?: number;
+
 };
 
 
@@ -372,7 +375,11 @@ export async function gerarRelatorioDocx({
               new ImageRun({
                 type: "png",
                 data: amostra.diagramaPng,
-                transformation: { width: 240, height: 240 },
+                transformation: {
+                  width: 300,
+                  height: Math.round(300 / (amostra.diagramaProporcao || 1)),
+                },
+
                 altText: {
                   title: "Esquema do órgão",
                   description:

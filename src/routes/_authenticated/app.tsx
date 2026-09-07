@@ -776,6 +776,7 @@ function AppPage() {
 
       const { pngDiagrama } = await import("@/lib/diagrama-svg");
       const { legendaTexto } = await import("@/lib/legendas");
+      const { orgaoPorId } = await import("@/lib/orgaos");
 
       const usaveis = amostras.filter((a) => a.texto.trim());
 
@@ -785,15 +786,21 @@ function AppPage() {
             ? await pngDiagrama(a.diagrama)
             : null;
 
+          const orgao = a.diagrama ? orgaoPorId(a.diagrama.orgao) : undefined;
+
           return {
             titulo: a.titulo.trim() || `Amostra ${i + 1}`,
             texto: a.texto.trim(),
             resumo: a.resumo,
             legenda: legendaTexto(a.legenda ?? [], a.diagrama),
             ...(png ? { diagramaPng: png } : {}),
+            ...(orgao
+              ? { diagramaProporcao: orgao.largura / orgao.altura }
+              : {}),
           };
         }),
       );
+
 
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
