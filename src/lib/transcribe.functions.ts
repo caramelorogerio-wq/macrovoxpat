@@ -3,13 +3,11 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import {
-  mimeFor,
   VOCABULARIO,
   PROMPT_OTIMIZACAO,
   PROMPT_SEPARACAO,
   gatewayError,
 } from "./ai-clinico";
-
 
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
@@ -27,16 +25,24 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       throw new Error("Sessão não encontrada.");
     }
 
-    // A transcrição corre nesta mesma aplicação: usa a origem do pedido para
-    // funcionar tanto no preview como na versão publicada.
-    const origin = new URL(request.url).origin;
+    const apiUrl =
+      process.env["PATOLOGIA_GERAL_AI_URL"] ??
+      "https://digivoz-ai-geral.caramelo-rogerio.workers.dev";
 
-    const response = await fetch(`${origin}/api/transcrever`, {
+    const internalKey = process.env["PATOLOGIA_GERAL_AI_KEY"];
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: authorization,
+    };
+
+    if (internalKey) {
+      headers["X-PatologiaGeral-Key"] = internalKey;
+    }
+
+    const response = await fetch(`${apiUrl}/api/transcrever`, {
       method: "POST",
-      headers: {
-        Authorization: authorization,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         audioBase64: data.audioBase64,
         format: data.format,
@@ -44,8 +50,6 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       }),
     });
 
-    // A resposta pode não ser JSON (por ex. uma página de erro): ler como
-    // texto e só depois tentar interpretar, para não rebentar com erro de JSON.
     const bruto = await response.text();
 
     let json: { text?: string; error?: string } = {};
@@ -67,9 +71,8 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       throw new Error("Resposta inesperada do serviço de transcrição.");
     }
 
-
     return {
-      text: (json.text ?? "").trim(),
+      text: json.text.trim(),
     };
   });
 
@@ -87,65 +90,59 @@ export const optimizeReport = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const request = getRequest();
+    const authorization = request.headers.get("authorization");
 
-    if (!apiKey) {
-      throw new Error("O serviço de IA não está configurado.");
+    if (!authorization?.toLowerCase().startsWith("bearer ")) {
+      throw new Error("Sessão não encontrada.");
     }
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3.7-flash",
-          messages: [
-            {
-              role: "system",
-              content: [
-                PROMPT_OTIMIZACAO,
-                VOCABULARIO,
-                data.correccoes?.length
-                  ? `Correcções que este médico costuma fazer (aplica-as quando o contexto o justificar): ${data.correccoes
-                      .map((c) => `"${c.de}" → "${c.para}"`)
-                      .join("; ")}.`
-                  : "",
-                data.exemplos?.length
-                  ? `Exemplos de relatórios anteriores deste médico, apenas como referência de estilo, pontuação e abreviaturas. Não copies conteúdo clínico destes exemplos:\n\n${data.exemplos.join(
-                      "\n\n---\n\n",
-                    )}`
-                  : "",
-              ]
-                .filter(Boolean)
-                .join("\n\n"),
-            },
-            {
-              role: "user",
-              content: data.texto,
-            },
-          ],
-        }),
-      },
-    );
+    const apiUrl =
+      process.env["PATOLOGIA_GERAL_AI_URL"] ??
+      "https://digivoz-ai-geral.caramelo-rogerio.workers.dev";
 
-    if (!response.ok) {
-      throw new Error(await gatewayError(response));
-    }
+    const internalKey = process.env["PATOLOGIA_GERAL_AI_KEY"];
 
-    const json = (await response.json()) as {
-      choices?: Array<{
-        message?: {
-          content?: string;
-        };
-      }>;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: authorization,
     };
 
+    if (internalKey) {
+      headers["X-PatologiaGeral-Key"] = internalKey;
+    }
+
+    const response = await fetch(`${apiUrl}/api/otimizar`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        texto: data.texto,
+        ...(data.correccoes?.length
+          ? { correccoes: data.correccoes }
+          : {}),
+        ...(data.exemplos?.length ? { exemplos: data.exemplos } : {}),
+      }),
+    });
+
+    const bruto = await response.text();
+
+    let json: { text?: string; error?: string } = {};
+
+    try {
+      json = JSON.parse(bruto) as { text?: string; error?: string };
+    } catch {
+      json = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        json.error ??
+          `Erro na otimização (${response.status}). Tente novamente.`,
+      );
+    }
+
     return {
-      text: json.choices?.[0]?.message?.content?.trim() ?? "",
+      text: (json.text ?? "").trim(),
     };
   });
 
