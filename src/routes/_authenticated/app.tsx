@@ -111,6 +111,7 @@ type Termo = {
   origem: string;
 };
 
+
 const blobToBase64 = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -125,6 +126,7 @@ const blobToBase64 = (blob: Blob) =>
 
     reader.readAsDataURL(blob);
   });
+
 
 function AppPage() {
   const navigate = useNavigate();
@@ -178,11 +180,13 @@ function AppPage() {
       lista.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     );
 
+
   const adicionarAmostra = () => {
     const nova = novaAmostra();
     setAmostras((lista) => [...lista, nova]);
     setActivaId(nova.id);
   };
+
 
   const removerAmostra = (id: string) =>
     setAmostras((lista) =>
@@ -190,6 +194,7 @@ function AppPage() {
         ? lista
         : lista.filter((a) => a.id !== id),
     );
+
 
   const moverAmostra = (id: string, direccao: -1 | 1) =>
     setAmostras((lista) => {
@@ -214,6 +219,7 @@ function AppPage() {
     "Serviço de Anatomia Patológica",
   );
 
+
   useEffect(() => {
     const guardado = localStorage.getItem("patologia-geral:modelo-docx");
 
@@ -234,12 +240,14 @@ function AppPage() {
     }
   }, []);
 
+
   useEffect(() => {
     localStorage.setItem(
       "patologia-geral:modelo-docx",
       JSON.stringify({ template, instituicao, servico }),
     );
   }, [template, instituicao, servico]);
+
 
   const carregar = useCallback(async () => {
     const sessao = await garantirSessao();
@@ -296,7 +304,6 @@ function AppPage() {
   }, [navigate]);
 
 
-
   const actualizarContexto = useCallback(async () => {
     try {
       await garantirSessao();
@@ -315,6 +322,7 @@ function AppPage() {
     void carregar();
     void actualizarContexto();
   }, [carregar, actualizarContexto]);
+
 
   const alternarAprendizagem = async () => {
     const novaEstado = !aprendizagem;
@@ -365,6 +373,7 @@ function AppPage() {
     );
   };
 
+
   const removerTermo = async (termo: Termo) => {
     const { error } = await comSessao(() =>
       supabase
@@ -393,6 +402,7 @@ function AppPage() {
       "Termo removido do vocabulário.",
     );
   };
+
 
   const handleAudio = async (
     blob: Blob,
@@ -437,6 +447,7 @@ function AppPage() {
         },
       });
 
+
       if (!resultado.text) {
         toast.error(
           "Não foi possível obter texto deste áudio.",
@@ -470,6 +481,7 @@ function AppPage() {
         void separarAmostras(alvo, resultado.text, true);
       }
 
+
     } catch (e) {
       toast.error(
         e instanceof Error
@@ -480,6 +492,7 @@ function AppPage() {
       setATranscrever(false);
     }
   };
+
 
   const separarAmostras = async (
     id: string,
@@ -558,6 +571,7 @@ function AppPage() {
     }
   };
 
+
   const otimizarTexto = async () => {
     if (!texto.trim()) {
       toast.error(
@@ -613,6 +627,7 @@ function AppPage() {
 
 
 
+
   const guardar = async () => {
     if (!texto.trim()) {
       toast.error(
@@ -655,7 +670,6 @@ function AppPage() {
     );
 
 
-
     if (error) {
       toast.error(
         "Não foi possível guardar o relatório.",
@@ -690,6 +704,7 @@ function AppPage() {
     await carregar();
     await actualizarContexto();
   };
+
 
   const abrirRelatorio = (r: Relatorio) => {
     const guardadas = Array.isArray(r.amostras)
@@ -736,6 +751,7 @@ function AppPage() {
     );
   };
 
+
   const apagar = async (
     id: string,
   ) => {
@@ -760,6 +776,7 @@ function AppPage() {
       ),
     );
   };
+
 
   const exportar = async () => {
     if (!texto.trim()) {
@@ -812,7 +829,6 @@ function AppPage() {
       });
 
 
-
       const url = URL.createObjectURL(blob);
 
       const a = document.createElement("a");
@@ -833,6 +849,7 @@ function AppPage() {
     }
   };
 
+
   const copiar = async () => {
     if (!texto.trim()) {
       return;
@@ -847,6 +864,7 @@ function AppPage() {
     );
   };
 
+
   const sair = async () => {
     await supabase.auth.signOut();
 
@@ -854,6 +872,7 @@ function AppPage() {
       to: "/auth",
     });
   };
+
 
   // ---------- COMANDOS POR VOZ ----------
 
@@ -863,14 +882,17 @@ function AppPage() {
   const [diagramaAberto, setDiagramaAberto] = useState(false);
 
   const [aGravar, setAGravar] = useState(false);
+
   /** Suspende a escuta de comandos (microfone reservado ao gravador). */
   const [vozSuspensa, setVozSuspensa] = useState(false);
   const aGravarRef = useRef(false);
   aGravarRef.current = aGravar;
 
+
   const tratarEstadoGravacao = useCallback((activa: boolean) => {
     setAGravar(activa);
     aGravarRef.current = activa;
+
     if (activa) {
       // Gravação iniciada pelo botão: fixa a amostra activa como destino.
       if (!alvoGravacaoRef.current) {
@@ -882,11 +904,11 @@ function AppPage() {
   }, []);
 
 
-
   const [pendente, setPendente] = useState<{
     comando: Comando;
     descricao: string;
   } | null>(null);
+
 
   const accoesRef = useRef({
     otimizarTexto,
@@ -905,6 +927,7 @@ function AppPage() {
     amostras,
     amostraActiva,
   });
+
   accoesRef.current = {
     otimizarTexto,
     guardar,
@@ -936,6 +959,7 @@ function AppPage() {
         return "Confirmar acção";
     }
   };
+
 
   const executar = useCallback((c: Comando) => {
     const a = accoesRef.current;
@@ -974,15 +998,18 @@ function AppPage() {
 
           toast.success("A gravar — diga \"App, parar\".");
         })();
+
         break;
       }
 
       case "parar-gravacao": {
         const parou = recorderRef.current?.parar() ?? false;
         setVozSuspensa(false);
+
         toast[parou ? "success" : "info"](
           parou ? "Gravação terminada." : "Não havia gravação em curso.",
         );
+
         break;
       }
 
@@ -992,21 +1019,26 @@ function AppPage() {
         toast.success("Nova amostra criada.");
         break;
 
+
       case "ir-amostra": {
         const alvo = a.amostras[c.indice - 1];
+
         if (!alvo) {
           toast.error(`Não existe a amostra ${c.indice}.`);
           break;
         }
+
         a.setActivaId(alvo.id);
         toast.success(`Amostra ${c.indice} activa.`);
         break;
       }
 
+
       case "apagar-amostra":
         a.removerAmostra(a.amostraActiva.id);
         toast.success("Amostra removida.");
         break;
+
 
       case "resumo":
         a.actualizarAmostra(a.amostraActiva.id, {
@@ -1014,6 +1046,7 @@ function AppPage() {
         });
         toast.success("Resumo técnico actualizado.");
         break;
+
 
       case "legenda-bloco": {
         const linhas: LinhaLegenda[] = aplicarLegenda(
@@ -1031,8 +1064,10 @@ function AppPage() {
                 c.blocos[c.blocos.length - 1]
               }: ${c.descricao}`,
         );
+
         break;
       }
+
 
       case "apagar-legenda-bloco": {
         const actual: Diagrama | null = a.amostraActiva.diagrama ?? null;
@@ -1056,6 +1091,7 @@ function AppPage() {
         break;
       }
 
+
       case "diagrama":
         a.setDiagramaAberto(c.aberto);
         toast.success(c.aberto ? "Diagrama aberto." : "Diagrama fechado.");
@@ -1070,39 +1106,49 @@ function AppPage() {
         );
         break;
 
+
       case "otimizar":
         void a.otimizarTexto();
         break;
+
 
       case "guardar":
         void a.guardar();
         break;
 
+
       case "exportar":
         void a.exportar();
         break;
+
 
       case "copiar":
         void a.copiar();
         break;
 
+
       case "novo-relatorio": {
         const nova = novaAmostra();
+
         a.setAmostras([nova]);
         a.setActivaId(nova.id);
         a.setNumeroAnalise("");
+
         toast.success("Relatório limpo.");
         break;
       }
+
 
       case "sair":
         void a.sair();
         break;
 
+
       default:
         break;
     }
   }, []);
+
 
   const tratarFrase = useCallback(
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
@@ -1112,8 +1158,10 @@ function AppPage() {
       if (corpo === null) return; // ditado normal
 
       const comando = interpretarComando(corpo);
+
       if (!comando) {
         if (aGravarRef.current) return; // ditado em curso: ignorar ruído
+
         toast.error(`Comando não reconhecido: "${corpo}"`);
         return;
       }
@@ -1130,11 +1178,13 @@ function AppPage() {
         return;
       }
 
+
       if (comando.tipo === "cancelar") {
         setPendente(null);
         toast.info("Acção cancelada.");
         return;
       }
+
 
       if (comando.tipo === "confirmar") {
         setPendente((p) => {
@@ -1142,25 +1192,31 @@ function AppPage() {
             toast.error("Não há nenhuma acção por confirmar.");
             return null;
           }
+
           executar(p.comando);
           return null;
         });
+
         return;
       }
+
 
       if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
         setPendente({
           comando,
           descricao: descreverComando(comando),
         });
+
         toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
         return;
       }
+
 
       executar(comando);
     },
     [executar],
   );
+
 
   const {
     suportado: vozSuportada,
@@ -1178,7 +1234,6 @@ function AppPage() {
 
 
   const palavras = contarPalavras(texto);
-
 
 
   return (
@@ -1211,12 +1266,20 @@ function AppPage() {
         </div>
       </header>
 
+
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
 
           {/* COLUNA ESQUERDA */}
 
           <div className="space-y-6">
+
+            {/* ANÁLISE — colocada no topo */}
+            <CampoAnalise
+              valor={numeroAnalise}
+              onChange={setNumeroAnalise}
+            />
+
 
             <BarraComandosVoz
               activo={maosLivres}
@@ -1230,6 +1293,7 @@ function AppPage() {
               aGravar={aGravar}
               vozSuspensa={vozSuspensa}
             />
+
 
             <RecorderPanel
               ref={recorderRef}
@@ -1257,14 +1321,11 @@ function AppPage() {
               ) : (
                 <SplitSquareVertical className="size-4" />
               )}
+
               Separar amostras do ditado
             </Button>
 
 
-            <CampoAnalise
-              valor={numeroAnalise}
-              onChange={setNumeroAnalise}
-            />
 
             <ModeloDocumento
               template={template}
@@ -1274,6 +1335,7 @@ function AppPage() {
               onInstituicaoChange={setInstituicao}
               onServicoChange={setServico}
             />
+
 
             {/* VOCABULÁRIO APRENDIDO */}
 
@@ -1295,6 +1357,7 @@ function AppPage() {
                   </div>
                 </div>
 
+
                 <Button
                   type="button"
                   variant="outline"
@@ -1303,11 +1366,13 @@ function AppPage() {
                   onClick={alternarAprendizagem}
                 >
                   <Power className="size-4" />
+
                   {aprendizagem
                     ? "Desligar"
                     : "Ligar"}
                 </Button>
               </div>
+
 
               {aprendizagem ? (
                 termos.length === 0 ? (
@@ -1345,6 +1410,7 @@ function AppPage() {
                           )}
                         </div>
 
+
                         <button
                           type="button"
                           onClick={() =>
@@ -1374,6 +1440,7 @@ function AppPage() {
             </section>
           </div>
 
+
           {/* COLUNA DIREITA */}
 
           <div className="space-y-6">
@@ -1395,6 +1462,7 @@ function AppPage() {
                   {palavras} palavras
                 </span>
               </div>
+
 
               <ListaAmostras
                 amostras={amostras}
@@ -1441,6 +1509,7 @@ function AppPage() {
                   Otimizar Relatório com IA
                 </Button>
 
+
                 <Button
                   variant="outline"
                   onClick={guardar}
@@ -1449,6 +1518,7 @@ function AppPage() {
                   <Save className="size-4" />
                   Guardar relatório
                 </Button>
+
 
                 <Button
                   variant="outline"
@@ -1459,12 +1529,14 @@ function AppPage() {
                   Exportar Word (.docx)
                 </Button>
 
+
                 <ExportarHL7
                   numeroAnalise={numeroAnalise}
                   amostras={amostras}
                   instituicao={instituicao}
                   servico={servico}
                 />
+
 
                 <Button
                   variant="outline"
@@ -1476,11 +1548,13 @@ function AppPage() {
                   Copiar
                 </Button>
 
+
                 <Button
                   variant="outline"
                   className="gap-2"
                   onClick={() => {
                     const nova = novaAmostra();
+
                     setAmostras([nova]);
                     setActivaId(nova.id);
                   }}
@@ -1493,6 +1567,7 @@ function AppPage() {
             </section>
 
 
+
             <section className="panel p-6">
               <h2 className="text-lg font-semibold text-foreground">
                 Os meus relatórios
@@ -1502,12 +1577,14 @@ function AppPage() {
                 Visíveis apenas na sua conta.
               </p>
 
+
               <ul className="mt-4 space-y-2">
                 {relatorios.length === 0 && (
                   <li className="text-sm text-muted-foreground">
                     Ainda não guardou relatórios.
                   </li>
                 )}
+
 
                 {relatorios.map((r) => (
                   <li
@@ -1533,6 +1610,7 @@ function AppPage() {
                         )}
                       </span>
                     </button>
+
 
                     <button
                       type="button"
