@@ -149,6 +149,18 @@ function AppPage() {
 
   const [numeroAnalise, setNumeroAnalise] = useState("");
 
+  useEffect(() => {
+    setAmostras((lista) => {
+      if (lista.length === 0 || lista[0]?.titulo === numeroAnalise) {
+        return lista;
+      }
+
+      return lista.map((a, i) =>
+        i === 0 ? { ...a, titulo: numeroAnalise } : a,
+      );
+    });
+  }, [numeroAnalise]);
+
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
   const [contexto, setContexto] =
