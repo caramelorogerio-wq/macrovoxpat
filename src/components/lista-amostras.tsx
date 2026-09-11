@@ -3,7 +3,6 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ResumoTecnico } from "@/components/resumo-tecnico";
 import { LegendaBlocos } from "@/components/legenda-blocos";
 import type { Amostra, ResumoAmostra } from "@/lib/amostras";
 import { contarPalavras } from "@/lib/amostras";
@@ -32,7 +31,6 @@ export function ListaAmostras({
   onActivar,
   onTituloChange,
   onTextoChange,
-  onResumoChange,
   onLegendaChange,
   onDiagramaChange,
   onAdicionar,
@@ -41,7 +39,6 @@ export function ListaAmostras({
   diagramaAberto,
   onDiagramaAbertoChange,
 }: Props) {
-
   return (
     <div className="space-y-4">
       {amostras.map((amostra, indice) => {
@@ -126,62 +123,24 @@ export function ListaAmostras({
               className="min-h-[220px] resize-none text-sm leading-relaxed"
             />
 
-            <ResumoTecnico
-              idPrefix={amostra.id}
-              compacto
-              fragmentos={amostra.resumo.fragmentos}
-              blocos={amostra.resumo.blocos}
-              seccionado={amostra.resumo.seccionado}
-              inclusao={amostra.resumo.inclusao}
-              codigoFaturacao={amostra.resumo.codigoFaturacao}
-              onFragmentosChange={(v) =>
-                onResumoChange(amostra.id, {
-                  ...amostra.resumo,
-                  fragmentos: v,
-                })
-              }
-              onBlocosChange={(v) =>
-                onResumoChange(amostra.id, {
-                  ...amostra.resumo,
-                  blocos: v,
-                })
-              }
-              onSeccionadoChange={(v) =>
-                onResumoChange(amostra.id, {
-                  ...amostra.resumo,
-                  seccionado: v,
-                })
-              }
-              onInclusaoChange={(v) =>
-                onResumoChange(amostra.id, {
-                  ...amostra.resumo,
-                  inclusao: v,
-                })
-              }
-              onCodigoFaturacaoChange={(v) =>
-                onResumoChange(amostra.id, {
-                  ...amostra.resumo,
-                  codigoFaturacao: v,
-                })
-              }
-            />
-
             <LegendaBlocos
               legenda={amostra.legenda ?? []}
               diagrama={amostra.diagrama ?? null}
               onLegendaChange={(linhas) =>
                 onLegendaChange(amostra.id, linhas)
               }
-              onDiagramaChange={(d) => onDiagramaChange(amostra.id, d)}
+              onDiagramaChange={(d) =>
+                onDiagramaChange(amostra.id, d)
+              }
               {...(activa
                 ? {
                     diagramaAberto: diagramaAberto,
-                    onDiagramaAbertoChange: onDiagramaAbertoChange,
+                    onDiagramaAbertoChange:
+                      onDiagramaAbertoChange,
                   }
                 : {})}
             />
           </section>
-
         );
       })}
 
