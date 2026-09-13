@@ -21,7 +21,7 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Entrar — Patologia Geral" },
       {
         property: "og:description",
-        content: "Acesso reservado a médicos: cada conta vê apenas os seus próprios relatórios.",
+        content: "Acesso reservado a utilizadores: cada conta vê apenas os seus próprios relatórios.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -97,7 +97,7 @@ function AuthPage() {
           </span>
           <div>
             <h1 className="text-xl font-semibold text-foreground">Patologia Geral</h1>
-            <p className="text-sm text-muted-foreground">Área reservada a médicos</p>
+            <p className="text-sm text-muted-foreground">Área reservada a utilizadores</p>
           </div>
         </div>
 

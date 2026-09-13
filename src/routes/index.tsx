@@ -10,13 +10,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Grave a voz, obtenha a transcrição em português europeu com terminologia macroscópica e otimize o relatório com IA. Cada médico vê apenas os seus dados.",
+          "Grave a voz, obtenha a transcrição em português europeu com terminologia macroscópica e otimize o relatório com IA. Cada utilizador vê apenas os seus dados.",
       },
       { property: "og:title", content: "Patologia Geral — Ditado clínico em português europeu" },
       {
         property: "og:description",
         content:
-          "Transcrição de voz para texto com vocabulário de macroscopia em patologia geral, revisão automática por IA e arquivo privado por médico.",
+          "Transcrição de voz para texto com vocabulário de macroscopia em patologia geral, revisão automática por IA e arquivo privado por utilizador.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -48,7 +48,7 @@ function Landing() {
         </h2>
         <p className="mt-4 max-w-2xl text-muted-foreground">
           Dite o exame, obtenha a transcrição com terminologia macroscópica correcta e exporte
-          o texto. Os relatórios ficam guardados em privado na conta de cada médico.
+          o texto. Os relatórios ficam guardados em privado na conta de cada utilizador.
         </p>
 
         <div className="mt-8">

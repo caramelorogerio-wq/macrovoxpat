@@ -78,7 +78,7 @@ export const Route = createFileRoute("/_authenticated/app")({
       {
         property: "og:description",
         content:
-          "Ditado clínico, transcrição automática e arquivo privado de relatórios por médico.",
+          "Ditado clínico, transcrição automática e arquivo privado de relatórios por utilizador.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
