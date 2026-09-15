@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" role="img" aria-label="Esquema anatómico do intestino delgado">
+  <rect width="1100" height="850" fill="#fff"/>
+  <path d="M202 173c127-87 390-102 626 2 77 34 104 134 53 189-63 67-169 11-231 46-79 45 50 131 142 150 106 22 111 123 42 158-96 50-226-31-301 10-62 34-178 31-243-20-88-69-69-172 27-190 91-17 205 17 235-28 33-49-86-100-192-113-115-14-168-118-98-204Z" fill="none" stroke="#e3a184" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M252 203c45 58 63 116 55 173M429 177c-15 81 11 155 78 218M653 173c-30 76-12 154 54 230M830 246c-50 50-72 104-65 161M312 523c-8 74 22 132 89 174M513 528c-39 61-42 123-11 187M708 538c32 59 29 118-8 177" fill="none" stroke="#c9806e" stroke-width="10" opacity=".8"/>
+  <path d="M151 110l103 83M850 679l94 65" stroke="#475569" stroke-width="15" stroke-linecap="round"/>
+</svg>

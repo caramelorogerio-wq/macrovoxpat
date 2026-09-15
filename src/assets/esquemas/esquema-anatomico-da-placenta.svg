@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" role="img" aria-label="Esquema anatómico da placenta e cordão umbilical">
+  <rect width="1100" height="800" fill="#fff"/>
+  <ellipse cx="500" cy="438" rx="354" ry="207" fill="#b15d59" stroke="#475569" stroke-width="12"/>
+  <ellipse cx="500" cy="410" rx="318" ry="166" fill="#d47d72" stroke="#be6a63" stroke-width="10"/>
+  <path d="M493 251c-17-87 37-168 117-202 66-28 144-19 209 23" fill="none" stroke="#dbab7d" stroke-width="40" stroke-linecap="round"/>
+  <path d="M493 251c-17-87 37-168 117-202 66-28 144-19 209 23" fill="none" stroke="#b8845d" stroke-width="10" stroke-dasharray="20 16" stroke-linecap="round"/>
+  <circle cx="493" cy="251" r="29" fill="#ba655e" stroke="#475569" stroke-width="10"/>
+  <path d="M256 401c111-90 254-118 402-81M300 500c111 73 262 87 408 35M369 577c89 34 194 29 283-12" fill="none" stroke="#e5a298" stroke-width="10" opacity=".85"/>
+</svg>

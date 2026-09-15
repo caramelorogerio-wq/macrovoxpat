@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" role="img" aria-label="Esquema anatómico do pâncreas">
+  <rect width="1100" height="700" fill="#fff"/>
+  <path d="M130 332c73-72 198-104 317-72 83 22 115 76 187 71 118-8 162-125 273-71 82 39 91 129 35 191-68 76-188 60-294 45-87-13-137 36-244 29-116-8-242-58-274-121-16-32-15-53 0-72Z" fill="#efd481" stroke="#475569" stroke-width="12"/>
+  <path d="M185 357c142-45 239-13 332 36 96 51 197 25 337-4" fill="none" stroke="#d5ae52" stroke-width="16" stroke-linecap="round"/>
+  <path d="M175 332l-82-74M885 294l107-61" stroke="#475569" stroke-width="17" stroke-linecap="round"/>
+  <path d="M469 294c10 65 13 132 0 200M662 290c-8 67-5 132 12 194" fill="none" stroke="#d5ae52" stroke-width="9" opacity=".9"/>
+</svg>

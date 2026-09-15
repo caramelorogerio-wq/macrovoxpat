@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-label="Esquema anatómico do apêndice">
+  <rect width="1000" height="700" fill="#fff"/>
+  <path d="M205 230c55-108 216-140 334-80 94 48 141 129 118 208-24 83-120 126-221 111-96-14-205-66-231-139-13-37-12-68 0-100Z" fill="#f3c4aa" stroke="#475569" stroke-width="12"/>
+  <path d="M510 337c91 18 182 82 190 178 7 80-53 139-113 122-54-15-70-82-92-140-23-61-52-96-104-106" fill="none" stroke="#d98f79" stroke-width="50" stroke-linecap="round"/>
+  <path d="M270 247c97-53 230-43 313 28M292 360c84 52 190 73 298 43" fill="none" stroke="#d99b84" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="432" cy="330" r="28" fill="#c66b60"/>
+</svg>

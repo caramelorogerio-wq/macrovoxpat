@@ -213,7 +213,10 @@ export async function gerarRelatorioDocx({
   ): (Paragraph | Table)[] => {
     const paragrafos: (Paragraph | Table)[] = [];
 
-    if (varias || amostra.titulo.trim()) {
+    if (
+      varias ||
+      (amostra.titulo.trim() && amostra.titulo.trim() !== titulo)
+    ) {
       paragrafos.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-label="Esquema anatómico do útero e anexos">
+  <rect width="1000" height="1000" fill="#fff"/>
+  <path d="M455 176c-138 24-220 127-196 273 17 102 91 164 159 206l31 190h102l31-190c68-42 142-104 159-206 24-146-58-249-196-273-29-5-61-5-90 0Z" fill="#f6c8ca" stroke="#475569" stroke-width="12"/>
+  <path d="M499 222c-104 17-160 97-144 201 10 65 58 113 144 160 86-47 134-95 144-160 16-104-40-184-144-201Z" fill="#fbe6e7" stroke="#d58b92" stroke-width="8"/>
+  <path d="M449 845h102l-18 92h-66Z" fill="#f0abb1" stroke="#475569" stroke-width="12"/>
+  <path d="M329 313C219 270 151 220 98 149M671 313c110-43 178-93 231-164" fill="none" stroke="#d58b92" stroke-width="22" stroke-linecap="round"/>
+  <path d="M328 313c-42 53-59 103-51 155M672 313c42 53 59 103 51 155" fill="none" stroke="#d58b92" stroke-width="18" stroke-linecap="round"/>
+  <ellipse cx="125" cy="126" rx="73" ry="54" fill="#f3b9be" stroke="#475569" stroke-width="12" transform="rotate(-22 125 126)"/>
+  <ellipse cx="875" cy="126" rx="73" ry="54" fill="#f3b9be" stroke="#475569" stroke-width="12" transform="rotate(22 875 126)"/>
+  <path d="M452 655h96v82h-96Z" fill="#e9969e" opacity=".85"/>
+</svg>

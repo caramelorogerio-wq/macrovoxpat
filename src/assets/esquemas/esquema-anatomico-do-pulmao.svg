@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1000" role="img" aria-label="Esquema anatómico dos pulmões">
+  <rect width="1100" height="1000" fill="#fff"/>
+  <path d="M492 145h116v135l-58 87-58-87Z" fill="#b9d9e8" stroke="#475569" stroke-width="12"/>
+  <path d="M487 277C342 282 168 408 169 704c1 121 73 179 173 149 102-31 139-129 151-238 15-139 11-247-6-338Z" fill="#b9d9e8" stroke="#475569" stroke-width="12"/>
+  <path d="M613 277c145 5 319 131 318 427-1 121-73 179-173 149-102-31-139-129-151-238-15-139-11-247 6-338Z" fill="#b9d9e8" stroke="#475569" stroke-width="12"/>
+  <path d="M476 407c-93 26-170 100-221 184M469 552c-90 13-166 61-228 144M624 407c93 26 170 100 221 184M631 552c90 13 166 61 228 144" fill="none" stroke="#6eaec9" stroke-width="13" stroke-linecap="round"/>
+  <path d="M550 367v371M550 414l-91 83M550 414l91 83M550 560l-113 84M550 560l113 84" fill="none" stroke="#5b9dba" stroke-width="15" stroke-linecap="round"/>
+  <path d="M225 744h650" stroke="#d7e8ef" stroke-width="38" stroke-linecap="round"/>
+</svg>

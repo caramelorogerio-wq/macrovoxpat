@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" role="img" aria-label="Esquema anatómico da bexiga e ureteres">
+  <rect width="1000" height="900" fill="#fff"/>
+  <path d="M245 84c-50 156-27 286 89 405M755 84c50 156 27 286-89 405" fill="none" stroke="#e2a06e" stroke-width="30" stroke-linecap="round"/>
+  <path d="M311 468c-74 36-99 115-74 201 27 92 122 147 263 147s236-55 263-147c25-86 0-165-74-201-59-29-123-35-189-35s-130 6-189 35Z" fill="#e9b68b" stroke="#475569" stroke-width="12"/>
+  <path d="M500 814v66" stroke="#e2a06e" stroke-width="34" stroke-linecap="round"/>
+  <path d="M374 519c75 38 177 38 252 0M352 625c90 43 206 43 296 0" fill="none" stroke="#ce875d" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="351" cy="487" r="20" fill="#ca7e59"/><circle cx="649" cy="487" r="20" fill="#ca7e59"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 850" role="img" aria-label="Esquema anatómico do testículo">
+  <rect width="900" height="850" fill="#fff"/>
+  <ellipse cx="430" cy="470" rx="202" ry="264" fill="#e8c6ac" stroke="#475569" stroke-width="12" transform="rotate(14 430 470)"/>
+  <ellipse cx="430" cy="470" rx="165" ry="225" fill="#f4dfcc" stroke="#cf9d7d" stroke-width="10" transform="rotate(14 430 470)"/>
+  <path d="M550 250c121 53 142 186 82 304-21 42-52 74-91 99 34-124 22-251-40-370 15-15 29-26 49-33Z" fill="#d59872" stroke="#475569" stroke-width="12"/>
+  <path d="M439 175c-5-72 41-122 105-153M485 194c12-70 61-110 125-132" fill="none" stroke="#d59872" stroke-width="25" stroke-linecap="round"/>
+  <path d="M316 356c77-54 171-62 258-19M284 500c95-41 208-35 303 18M332 645c72-22 150-8 220 40" fill="none" stroke="#d7ad8e" stroke-width="9" stroke-linecap="round"/>
+</svg>

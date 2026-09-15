@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Esquema anatómico da pele em secção">
+  <rect width="1200" height="800" fill="#fff"/>
+  <path d="M88 116c75-36 140 36 218 0 79-36 143 36 222 0 79-36 144 36 223 0 79-36 145 36 221 0 74-35 136 22 140 56v77H88Z" fill="#f4c2ad" stroke="#475569" stroke-width="12"/>
+  <path d="M88 249h1024v108H88Z" fill="#f5d4bb" stroke="#475569" stroke-width="8"/>
+  <path d="M88 357h1024v158H88Z" fill="#f7e59b" stroke="#475569" stroke-width="8"/>
+  <path d="M88 515h1024v215H88Z" fill="#e9b092" stroke="#475569" stroke-width="8"/>
+  <path d="M474 118v190c0 45-63 58-63 114v92M736 118v166c0 47 62 55 62 117v105" fill="none" stroke="#5b6470" stroke-width="17" stroke-linecap="round"/>
+  <path d="M411 136c0-80 127-80 127 0" fill="none" stroke="#5b6470" stroke-width="17" stroke-linecap="round"/>
+  <path d="M772 136c0-80 127-80 127 0" fill="none" stroke="#5b6470" stroke-width="17" stroke-linecap="round"/>
+  <path d="M218 628c80-58 157-58 237 0M746 628c81-58 158-58 238 0" fill="none" stroke="#ba6b64" stroke-width="30" stroke-linecap="round"/>
+  <circle cx="600" cy="192" r="36" fill="#b76763" opacity=".9"/>
+</svg>

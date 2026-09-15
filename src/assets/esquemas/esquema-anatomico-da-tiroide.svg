@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-label="Esquema anatómico da tiroide">
+  <rect width="1000" height="700" fill="#fff"/>
+  <path d="M458 94h84v196h-84Z" fill="#c7e0ec" stroke="#475569" stroke-width="12"/>
+  <path d="M457 253c-117-82-256-31-290 97-34 129 26 252 131 275 90 20 159-55 168-154 7-78 5-147-9-215Z" fill="#d890a3" stroke="#475569" stroke-width="12"/>
+  <path d="M543 253c117-82 256-31 290 97 34 129-26 252-131 275-90 20-159-55-168-154-7-78-5-147 9-215Z" fill="#d890a3" stroke="#475569" stroke-width="12"/>
+  <path d="M442 366h116v93H442Z" fill="#bf7088" stroke="#475569" stroke-width="10"/>
+  <circle cx="315" cy="301" r="18" fill="#f4c96b"/><circle cx="373" cy="445" r="18" fill="#f4c96b"/><circle cx="685" cy="301" r="18" fill="#f4c96b"/><circle cx="627" cy="445" r="18" fill="#f4c96b"/>
+  <path d="M500 94v-55" stroke="#9dc3d4" stroke-width="26" stroke-linecap="round"/>
+</svg>

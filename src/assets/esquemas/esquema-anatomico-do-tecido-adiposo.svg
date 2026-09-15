@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 750" role="img" aria-label="Esquema anatómico de tecido adiposo">
+  <rect width="1000" height="750" fill="#fff"/>
+  <path d="M109 144h782v462H109Z" fill="#f6df83" stroke="#475569" stroke-width="12"/>
+  <g fill="#fff1a8" stroke="#d3b753" stroke-width="8">
+    <circle cx="215" cy="245" r="72"/><circle cx="388" cy="228" r="83"/><circle cx="579" cy="252" r="77"/><circle cx="766" cy="230" r="74"/>
+    <circle cx="274" cy="431" r="85"/><circle cx="492" cy="414" r="78"/><circle cx="696" cy="430" r="92"/>
+    <circle cx="188" cy="550" r="61"/><circle cx="420" cy="551" r="77"/><circle cx="605" cy="557" r="69"/><circle cx="809" cy="545" r="63"/>
+  </g>
+  <path d="M123 328h754M123 484h754" stroke="#c48760" stroke-width="14" stroke-linecap="round"/>
+  <path d="M169 157c84 68 155 152 214 250M762 156c-69 87-116 177-140 270" fill="none" stroke="#ba6a5d" stroke-width="12" stroke-linecap="round"/>
+</svg>

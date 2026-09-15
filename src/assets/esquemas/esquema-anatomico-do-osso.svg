@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 750" role="img" aria-label="Esquema anatómico de osso longo em secção">
+  <rect width="1100" height="750" fill="#fff"/>
+  <path d="M177 261c-67-56-73-158-4-207 71-51 190-23 238 54l106 168h114l106-168c48-77 167-105 238-54 69 49 63 151-4 207l-126 105c-47 39-76 97-79 158l-7 151H341l-7-151c-3-61-32-119-79-158L177 261Z" fill="#e9e0c6" stroke="#475569" stroke-width="12"/>
+  <path d="M414 326h272v310H414Z" fill="#f4eedb" stroke="#cbbf9e" stroke-width="10"/>
+  <path d="M470 343h160v278H470Z" fill="#b86d63" opacity=".8"/>
+  <path d="M208 142c75 25 126 76 154 151M892 142c-75 25-126 76-154 151" fill="none" stroke="#d2c49f" stroke-width="18" stroke-linecap="round"/>
+  <path d="M341 675h418" stroke="#475569" stroke-width="12"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Esquema anatómico de peça mamária">
+  <rect width="1200" height="900" fill="#fff"/>
+  <path d="M160 480C180 250 390 125 635 160c184 26 323 147 375 308l-92 51c-92 52-136 141-201 210-89 95-228 130-363 91-139-40-219-155-194-340Z" fill="#f7d6cd" stroke="#475569" stroke-width="12"/>
+  <path d="M214 454c34-161 181-261 346-245 144 14 277 105 337 232-97-47-194-44-278 17-95 70-172 78-282 50-51-13-89-28-123-54Z" fill="#f2b7a9" opacity=".75"/>
+  <path d="M351 275c78-61 185-86 281-50M275 605c98 75 239 99 352 33M562 228c-28 122-17 277 29 406" fill="none" stroke="#d58f83" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <circle cx="334" cy="445" r="59" fill="#c98378" stroke="#475569" stroke-width="8"/>
+  <circle cx="334" cy="445" r="18" fill="#a65d57"/>
+  <path d="M1007 455l121-67 35 101-132 74Z" fill="#f7d6cd" stroke="#475569" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M862 604c38-36 83-61 137-75" fill="none" stroke="#d58f83" stroke-width="12" stroke-linecap="round"/>
+</svg>

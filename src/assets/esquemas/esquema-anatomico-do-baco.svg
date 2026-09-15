@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" role="img" aria-label="Esquema anatómico do baço">
+  <rect width="900" height="700" fill="#fff"/>
+  <path d="M179 302c56-173 268-239 425-145 151 91 191 268 91 391-95 116-291 121-428 27-114-78-129-171-88-273Z" fill="#a9576b" stroke="#475569" stroke-width="12"/>
+  <path d="M229 318c88-139 261-181 389-95M222 412c105 107 305 152 445 71" fill="none" stroke="#c47786" stroke-width="13" stroke-linecap="round" opacity=".9"/>
+  <path d="M699 266l118-72 30 78-122 75Z" fill="#bc7180" stroke="#475569" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M279 188c-11 76-5 133 26 190M444 134c-3 80 19 150 66 210" fill="none" stroke="#d4939e" stroke-width="8" opacity=".8"/>
+</svg>
