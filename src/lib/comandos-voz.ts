@@ -361,7 +361,7 @@ export function interpretarComando(texto: string): Comando | null {
     return { tipo: "apagar-legenda-bloco", bloco: blocoApagar };
 
   const legenda = t.match(
-    /^legenda(?: de| do| da)?\s+blocos?\s+(\d+|[a-z]+)(?:\s+(?:a|ate|e)\s+(\d+|[a-z]+))?\s+(.+)$/,
+    /^(?:legenda(?: de| do| da)?\s+)?blocos?\s+(?:numero\s+|n\s+)?(\d+|[a-z]+)(?:\s+(?:a|ate|e)\s+(\d+|[a-z]+))?\s+(.+)$/,
   );
 
   if (legenda) {
