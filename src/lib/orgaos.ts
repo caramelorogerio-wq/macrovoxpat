@@ -20,20 +20,20 @@ import esofago from "@/assets/esquemas/esquema-anatomico-do-esofago.png.asset.js
 import estomago from "@/assets/esquemas/esquema-anatomico-do-estomago.png.asset.json";
 import figado from "@/assets/esquemas/esquema-anatomico-do-figado.png.asset.json";
 import mama from "@/assets/esquemas/esquema-anatomico-da-mama.svg";
-import uteroAnexos from "@/assets/esquemas/esquema-anatomico-do-utero-anexos.svg";
-import pulmao from "@/assets/esquemas/esquema-anatomico-do-pulmao.svg";
-import tiroide from "@/assets/esquemas/esquema-anatomico-da-tiroide.svg";
-import pele from "@/assets/esquemas/esquema-anatomico-da-pele.svg";
-import apendice from "@/assets/esquemas/esquema-anatomico-do-apendice.svg";
-import intestinoDelgado from "@/assets/esquemas/esquema-anatomico-do-intestino-delgado.svg";
-import baco from "@/assets/esquemas/esquema-anatomico-do-baco.svg";
-import pancreas from "@/assets/esquemas/esquema-anatomico-do-pancreas.svg";
-import bexigaUreter from "@/assets/esquemas/esquema-anatomico-da-bexiga-ureter.svg";
+import uteroAnexos from "@/assets/esquemas/esquema-utero-anexos.jpg";
+import pulmao from "@/assets/esquemas/esquema-pulmao.jpg";
+import tiroide from "@/assets/esquemas/esquema-tiroide.jpg";
+import pele from "@/assets/esquemas/esquema-pele.jpg";
+import apendice from "@/assets/esquemas/esquema-apendice.jpg";
+import intestinoDelgado from "@/assets/esquemas/esquema-intestino-delgado.jpg";
+import baco from "@/assets/esquemas/esquema-baco.jpg";
+import pancreas from "@/assets/esquemas/esquema-pancreas.jpg";
+import bexigaUreter from "@/assets/esquemas/esquema-bexiga-ureter.jpg";
 import testiculo from "@/assets/esquemas/esquema-anatomico-do-testiculo.svg";
-import placenta from "@/assets/esquemas/esquema-anatomico-da-placenta.svg";
-import osso from "@/assets/esquemas/esquema-anatomico-do-osso.svg";
-import musculo from "@/assets/esquemas/esquema-anatomico-do-musculo.svg";
-import tecidoAdiposo from "@/assets/esquemas/esquema-anatomico-do-tecido-adiposo.svg";
+import placenta from "@/assets/esquemas/esquema-placenta.jpg";
+import osso from "@/assets/esquemas/esquema-osso.jpg";
+import musculo from "@/assets/esquemas/esquema-musculo.jpg";
+import tecidoAdiposo from "@/assets/esquemas/esquema-tecido-adiposo.jpg";
 
 export type ZonaOrgao = {
   id: string;
@@ -97,26 +97,11 @@ export const ORGAOS: Orgao[] = [
     largura: 1208,
     altura: 1302,
     zonas: [
-      { id: "colon-transverso", nome: "Cólon transverso", d: cx(10, 10, 26, 18) },
-      {
-        id: "margem-transverso",
-        nome: "Margem de secção do cólon transverso",
-        d: cx(5, 8, 7, 22),
-      },
-      { id: "flexura-esplenica", nome: "Flexura esplénica", d: cx(52, 5, 20, 14) },
-      { id: "colon-descendente", nome: "Cólon descendente", d: cx(48, 28, 22, 34) },
-      { id: "colon-sigmoide", nome: "Cólon sigmoide", d: cx(42, 72, 30, 18) },
-      { id: "mesocolon-sigmoide", nome: "Mesocólon sigmoide", d: cx(25, 58, 22, 20) },
-      {
-        id: "margem-distal",
-        nome: "Recto / margem de secção distal",
-        d: cx(12, 74, 17, 18),
-      },
-      {
-        id: "ganglios",
-        nome: "Gânglios do mesocólon",
-        d: cx(30, 30, 18, 26),
-      },
+      { id: "base", nome: "Base / margem de secção", d: cx(2, 6, 14, 22) },
+      { id: "mesoapendice", nome: "Mesoapêndice", d: cx(20, 8, 50, 40) },
+      { id: "corpo", nome: "Corpo do apêndice", d: cx(22, 28, 40, 36) },
+      { id: "ponta", nome: "Ponta do apêndice", d: cx(78, 66, 20, 26) },
+      { id: "lesao", nome: "Lesão / área de perfuração", d: cx(62, 52, 16, 18) },
     ],
   },
 
@@ -428,52 +413,48 @@ export const ORGAOS: Orgao[] = [
     id: "utero-anexos",
     nome: "Útero e anexos (histerectomia)",
     imagem: uteroAnexos,
-    largura: 1000,
-    altura: 1000,
+    largura: 1008,
+    altura: 1008,
     zonas: [
-      { id: "fundo", nome: "Fundo uterino", d: cx(38, 18, 24, 13) },
-      { id: "corpo", nome: "Corpo uterino", d: cx(31, 31, 38, 28) },
-      { id: "endomentrio", nome: "Endométrio / cavidade endometrial", d: cx(43, 28, 14, 31) },
-      { id: "miometrio", nome: "Miométrio", d: cx(31, 37, 13, 22) },
-      { id: "colo", nome: "Colo do útero", d: cx(42, 61, 16, 16) },
-      { id: "vagina", nome: "Cúpula vaginal / margem vaginal", d: cx(43, 84, 14, 10) },
-      { id: "trompa-direita", nome: "Trompa uterina direita", d: cx(16, 20, 20, 13) },
-      { id: "ovario-direito", nome: "Ovário direito", d: cx(5, 6, 17, 13) },
-      { id: "trompa-esquerda", nome: "Trompa uterina esquerda", d: cx(64, 20, 20, 13) },
-      { id: "ovario-esquerdo", nome: "Ovário esquerdo", d: cx(78, 6, 17, 13) },
+      { id: "lesao", nome: "Lesão", d: cx(40, 4, 22, 16) },
+      { id: "superficie", nome: "Superfície cutânea", d: cx(4, 12, 36, 10) },
+      { id: "epiderme", nome: "Epiderme", d: cx(4, 23, 88, 8) },
+      { id: "derme", nome: "Derme", d: cx(4, 32, 88, 28) },
+      { id: "hipoderme", nome: "Hipoderme / tecido adiposo subcutâneo", d: cx(4, 61, 88, 24) },
+      { id: "margem-profunda", nome: "Margem profunda", d: cx(4, 86, 88, 8) },
     ],
   },
   {
     id: "pulmao",
     nome: "Pulmão (ressecção pulmonar)",
     imagem: pulmao,
-    largura: 1100,
-    altura: 1000,
+    largura: 1104,
+    altura: 1008,
     zonas: [
-      { id: "pulmao-direito-superior", nome: "Lobo superior direito", d: cx(16, 28, 25, 25) },
-      { id: "pulmao-direito-medio", nome: "Lobo médio direito", d: cx(20, 53, 23, 17) },
-      { id: "pulmao-direito-inferior", nome: "Lobo inferior direito", d: cx(18, 69, 27, 17) },
-      { id: "pulmao-esquerdo-superior", nome: "Lobo superior esquerdo", d: cx(59, 28, 25, 29) },
-      { id: "pulmao-esquerdo-inferior", nome: "Lobo inferior esquerdo", d: cx(56, 60, 29, 26) },
-      { id: "hilo", nome: "Hilo pulmonar / margem brônquica", d: cx(44, 39, 12, 28) },
-      { id: "pleura", nome: "Pleura visceral", d: cx(14, 25, 73, 63) },
+      { id: "pulmao-direito-superior", nome: "Lobo superior direito", d: cx(12, 12, 30, 33) },
+      { id: "pulmao-direito-medio", nome: "Lobo médio direito", d: cx(12, 48, 28, 30) },
+      { id: "pulmao-direito-inferior", nome: "Lobo inferior direito", d: cx(4, 55, 10, 38) },
+      { id: "pulmao-esquerdo-superior", nome: "Lobo superior esquerdo", d: cx(60, 12, 32, 50) },
+      { id: "pulmao-esquerdo-inferior", nome: "Lobo inferior esquerdo", d: cx(70, 58, 26, 36) },
+      { id: "hilo", nome: "Hilo pulmonar / margem brônquica", d: cx(38, 36, 26, 20) },
+      { id: "traqueia", nome: "Traqueia / margem traqueal", d: cx(45, 1, 10, 34) },
     ],
   },
   {
     id: "tiroide",
     nome: "Tiroide (tiroidectomia)",
     imagem: tiroide,
-    largura: 1000,
-    altura: 700,
+    largura: 1008,
+    altura: 704,
     zonas: [
-      { id: "lobo-direito", nome: "Lobo direito", d: cx(17, 35, 29, 38) },
-      { id: "lobo-esquerdo", nome: "Lobo esquerdo", d: cx(54, 35, 29, 38) },
-      { id: "istmo", nome: "Istmo", d: cx(44, 52, 12, 14) },
-      { id: "polo-superior-direito", nome: "Polo superior direito", d: cx(33, 35, 13, 13) },
-      { id: "polo-inferior-direito", nome: "Polo inferior direito", d: cx(26, 65, 14, 12) },
-      { id: "polo-superior-esquerdo", nome: "Polo superior esquerdo", d: cx(54, 35, 13, 13) },
-      { id: "polo-inferior-esquerdo", nome: "Polo inferior esquerdo", d: cx(60, 65, 14, 12) },
-      { id: "paratiroides", nome: "Paratiroides", d: cx(28, 40, 43, 30) },
+      { id: "lobo-direito", nome: "Lobo direito", d: cx(14, 25, 26, 45) },
+      { id: "lobo-esquerdo", nome: "Lobo esquerdo", d: cx(60, 25, 26, 45) },
+      { id: "istmo", nome: "Istmo", d: cx(41, 52, 19, 20) },
+      { id: "polo-superior-direito", nome: "Polo superior direito", d: cx(19, 2, 14, 22) },
+      { id: "polo-inferior-direito", nome: "Polo inferior direito", d: cx(19, 72, 22, 22) },
+      { id: "polo-superior-esquerdo", nome: "Polo superior esquerdo", d: cx(73, 2, 14, 22) },
+      { id: "polo-inferior-esquerdo", nome: "Polo inferior esquerdo", d: cx(60, 72, 22, 22) },
+      { id: "paratiroides", nome: "Paratiroides", d: cx(13, 30, 6, 40) },
     ],
   },
   {
@@ -495,8 +476,8 @@ export const ORGAOS: Orgao[] = [
     id: "apendice",
     nome: "Apêndice (apendicectomia)",
     imagem: apendice,
-    largura: 1000,
-    altura: 700,
+    largura: 1008,
+    altura: 704,
     zonas: [
       { id: "base", nome: "Base / margem de secção", d: cx(19, 31, 16, 20) },
       { id: "corpo", nome: "Corpo do apêndice", d: cx(43, 42, 18, 18) },
@@ -509,57 +490,57 @@ export const ORGAOS: Orgao[] = [
     id: "intestino-delgado",
     nome: "Intestino delgado (ressecção segmentar)",
     imagem: intestinoDelgado,
-    largura: 1100,
-    altura: 850,
+    largura: 1104,
+    altura: 864,
     zonas: [
-      { id: "margem-proximal", nome: "Margem de ressecção proximal", d: cx(12, 10, 15, 16) },
-      { id: "jejunum", nome: "Jejuno", d: cx(27, 24, 32, 32) },
-      { id: "ileon", nome: "Íleon", d: cx(42, 54, 31, 32) },
-      { id: "mesenterio", nome: "Mesentério / gânglios linfáticos", d: cx(22, 44, 58, 24) },
-      { id: "margem-distal", nome: "Margem de ressecção distal", d: cx(75, 76, 16, 16) },
+      { id: "margem-proximal", nome: "Margem de ressecção proximal", d: cx(2, 4, 14, 20) },
+      { id: "jejunum", nome: "Jejuno", d: cx(16, 2, 44, 26) },
+      { id: "ileon", nome: "Íleon", d: cx(62, 20, 32, 50) },
+      { id: "mesenterio", nome: "Mesentério / gânglios linfáticos", d: cx(22, 28, 48, 62) },
+      { id: "margem-distal", nome: "Margem de ressecção distal", d: cx(84, 74, 16, 22) },
     ],
   },
   {
     id: "baco",
     nome: "Baço (esplenectomia)",
     imagem: baco,
-    largura: 900,
-    altura: 700,
+    largura: 928,
+    altura: 720,
     zonas: [
-      { id: "polo-superior", nome: "Polo superior", d: cx(25, 15, 24, 22) },
-      { id: "corpo", nome: "Corpo / parênquima esplénico", d: cx(28, 34, 38, 30) },
-      { id: "polo-inferior", nome: "Polo inferior", d: cx(45, 64, 24, 18) },
-      { id: "hilo", nome: "Hilo esplénico / margem vascular", d: cx(77, 29, 16, 20) },
-      { id: "capsula", nome: "Cápsula esplénica", d: cx(19, 22, 60, 52) },
+      { id: "polo-superior", nome: "Polo superior", d: cx(16, 3, 36, 22) },
+      { id: "corpo", nome: "Corpo / parênquima esplénico", d: cx(16, 26, 38, 40) },
+      { id: "polo-inferior", nome: "Polo inferior", d: cx(38, 68, 26, 28) },
+      { id: "hilo", nome: "Hilo esplénico / margem vascular", d: cx(55, 25, 35, 30) },
+      { id: "capsula", nome: "Cápsula esplénica", d: cx(56, 58, 8, 10) },
     ],
   },
   {
     id: "pancreas",
     nome: "Pâncreas (pancreatectomia)",
     imagem: pancreas,
-    largura: 1100,
-    altura: 700,
+    largura: 1104,
+    altura: 704,
     zonas: [
-      { id: "cabeca", nome: "Cabeça do pâncreas", d: cx(12, 38, 25, 26) },
-      { id: "colo", nome: "Colo do pâncreas", d: cx(35, 36, 15, 27) },
-      { id: "corpo", nome: "Corpo do pâncreas", d: cx(48, 36, 23, 27) },
-      { id: "cauda", nome: "Cauda do pâncreas", d: cx(69, 32, 20, 29) },
-      { id: "ducto", nome: "Ducto pancreático principal", d: cx(17, 47, 60, 12) },
-      { id: "margem", nome: "Margem de ressecção", d: cx(8, 30, 12, 29) },
+      { id: "cabeca", nome: "Cabeça do pâncreas", d: cx(2, 20, 20, 62) },
+      { id: "colo", nome: "Colo do pâncreas", d: cx(22, 28, 16, 40) },
+      { id: "corpo", nome: "Corpo do pâncreas", d: cx(38, 26, 30, 36) },
+      { id: "cauda", nome: "Cauda do pâncreas", d: cx(68, 12, 30, 40) },
+      { id: "ducto", nome: "Ducto pancreático principal", d: cx(14, 40, 8, 22) },
+      { id: "margem", nome: "Margem de ressecção", d: cx(35, 58, 10, 10) },
     ],
   },
   {
     id: "bexiga-ureter",
     nome: "Bexiga e ureteres (cistectomia)",
     imagem: bexigaUreter,
-    largura: 1000,
-    altura: 900,
+    largura: 1008,
+    altura: 912,
     zonas: [
-      { id: "ureter-direito", nome: "Ureter direito", d: cx(21, 9, 18, 45) },
-      { id: "ureter-esquerdo", nome: "Ureter esquerdo", d: cx(61, 9, 18, 45) },
-      { id: "trigono", nome: "Trígono vesical", d: cx(42, 57, 16, 14) },
-      { id: "parede", nome: "Parede vesical", d: cx(26, 50, 48, 38) },
-      { id: "colo", nome: "Colo vesical / margem uretral", d: cx(44, 84, 13, 14) },
+      { id: "ureter-direito", nome: "Ureter direito", d: cx(13, 1, 15, 38) },
+      { id: "ureter-esquerdo", nome: "Ureter esquerdo", d: cx(72, 1, 15, 38) },
+      { id: "trigono", nome: "Trígono vesical", d: cx(38, 42, 26, 22) },
+      { id: "parede", nome: "Parede vesical", d: cx(18, 20, 64, 20) },
+      { id: "colo", nome: "Colo vesical / margem uretral", d: cx(42, 70, 16, 24) },
     ],
   },
   {
@@ -580,54 +561,54 @@ export const ORGAOS: Orgao[] = [
     id: "placenta",
     nome: "Placenta e cordão umbilical",
     imagem: placenta,
-    largura: 1100,
+    largura: 1104,
     altura: 800,
     zonas: [
-      { id: "face-fetal", nome: "Face fetal / placa coriónica", d: cx(17, 30, 57, 22) },
-      { id: "face-materna", nome: "Face materna / cotilédones", d: cx(18, 51, 57, 26) },
-      { id: "margem", nome: "Margem placentária", d: cx(12, 36, 68, 41) },
-      { id: "insercao", nome: "Inserção do cordão umbilical", d: cx(41, 25, 10, 12) },
-      { id: "cordao", nome: "Cordão umbilical", d: cx(44, 1, 35, 29) },
+      { id: "cordao", nome: "Cordão umbilical", d: cx(55, 0, 35, 30) },
+      { id: "insercao", nome: "Inserção do cordão umbilical", d: cx(50, 30, 14, 14) },
+      { id: "face-fetal", nome: "Face fetal / placa coriónica", d: cx(10, 20, 40, 45) },
+      { id: "face-materna", nome: "Face materna / cotilédones", d: cx(8, 68, 84, 22) },
+      { id: "margem", nome: "Margem placentária", d: cx(86, 40, 12, 28) },
     ],
   },
   {
     id: "osso",
     nome: "Osso longo (ressecção óssea)",
     imagem: osso,
-    largura: 1100,
-    altura: 750,
+    largura: 1104,
+    altura: 752,
     zonas: [
-      { id: "epifise-proximal", nome: "Epífise proximal / margem", d: cx(10, 7, 29, 38) },
-      { id: "diafise", nome: "Diáfise", d: cx(38, 36, 25, 50) },
-      { id: "cortical", nome: "Cortical óssea", d: cx(30, 35, 40, 53) },
-      { id: "medula", nome: "Canal medular", d: cx(42, 45, 16, 39) },
-      { id: "epifise-distal", nome: "Epífise distal / margem", d: cx(61, 7, 29, 38) },
+      { id: "epifise-proximal", nome: "Epífise proximal / margem", d: cx(3, 3, 24, 38) },
+      { id: "diafise", nome: "Diáfise", d: cx(28, 62, 48, 26) },
+      { id: "cortical", nome: "Cortical óssea", d: cx(14, 42, 14, 26) },
+      { id: "medula", nome: "Canal medular", d: cx(80, 40, 8, 32) },
+      { id: "epifise-distal", nome: "Epífise distal / margem", d: cx(75, 10, 22, 32) },
     ],
   },
   {
     id: "musculo",
     nome: "Músculo (excisão de partes moles)",
     imagem: musculo,
-    largura: 1100,
-    altura: 700,
+    largura: 1104,
+    altura: 704,
     zonas: [
-      { id: "margem-proximal", nome: "Margem proximal", d: cx(6, 39, 13, 18) },
-      { id: "corpo", nome: "Corpo muscular", d: cx(18, 24, 64, 52) },
-      { id: "fasciculos", nome: "Fascículos musculares", d: cx(25, 35, 50, 28) },
-      { id: "margem-distal", nome: "Margem distal", d: cx(81, 39, 13, 18) },
+      { id: "margem-proximal", nome: "Margem proximal", d: cx(0, 36, 14, 22) },
+      { id: "corpo", nome: "Corpo muscular", d: cx(20, 20, 25, 55) },
+      { id: "fasciculos", nome: "Fascículos musculares", d: cx(45, 26, 35, 42) },
+      { id: "margem-distal", nome: "Margem distal", d: cx(86, 36, 14, 22) },
     ],
   },
   {
     id: "tecido-adiposo",
     nome: "Tecido adiposo / partes moles",
     imagem: tecidoAdiposo,
-    largura: 1000,
-    altura: 750,
+    largura: 1008,
+    altura: 752,
     zonas: [
-      { id: "superficie", nome: "Superfície", d: cx(10, 14, 80, 13) },
-      { id: "tecido", nome: "Tecido adiposo", d: cx(12, 25, 76, 54) },
-      { id: "septo", nome: "Septos fibrosos", d: cx(14, 40, 72, 27) },
-      { id: "margem-profunda", nome: "Margem profunda", d: cx(10, 80, 80, 12) },
+      { id: "superficie", nome: "Superfície", d: cx(8, 12, 82, 15) },
+      { id: "tecido", nome: "Tecido adiposo", d: cx(6, 30, 46, 42) },
+      { id: "septo", nome: "Septos fibrosos", d: cx(52, 30, 34, 42) },
+      { id: "margem-profunda", nome: "Margem profunda", d: cx(6, 73, 84, 14) },
     ],
   },
 ];
