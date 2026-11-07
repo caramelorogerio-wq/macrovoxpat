@@ -185,6 +185,9 @@ const VARIANTES_ACTIVACAO = [
   "patologia geral",
   "patologia",
   "patologia geral app",
+  "ditar",
+  "dita",
+  "dite",
 ];
 
 /** Palavras de enchimento que podem envolver o comando. */
