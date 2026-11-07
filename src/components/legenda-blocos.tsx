@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { ListOrdered, Map, Plus, Trash2 } from "lucide-react";
+import { ListOrdered, Map, Mic, MicOff, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useDitadoCurto } from "@/hooks/use-ditado-curto";
+import { interpretarLegendaDitada } from "@/lib/comandos-voz";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +46,67 @@ export function LegendaBlocos({
 
   const linhas = legenda;
 
+  const { aOuvir, ouvir, parar } = useDitadoCurto();
+
+  /** Mantém acentos: retira só o prefixo "bloco N" da frase original. */
+  const descricaoOriginal = (frase: string, fallback: string) => {
+    const resto = frase
+      .replace(/^\s*(legenda\s+)?((d[oa]|de)\s+)?blocos?\s+(n[uú]mero\s+)?\S+(\s+(a|até|ate|e)\s+\S+)?[\s,:.-]+/i, "")
+      .replace(/[.\s]+$/, "")
+      .trim();
+    const d = resto || fallback;
+    return d.charAt(0).toUpperCase() + d.slice(1);
+  };
+
+  /** Ditado "bloco N descrição": cria/actualiza a linha. */
+  const ditarLinhaNova = () => {
+    if (aOuvir) return parar();
+    ouvir(
+      "nova",
+      (frase) => {
+        const r = interpretarLegendaDitada(frase);
+        if (!r) {
+          toast.error(`Diga "bloco número descrição". Ouvi: "${frase}"`);
+          return;
+        }
+        const descricao = descricaoOriginal(frase, r.descricao);
+        onLegendaChange(aplicarLegenda(linhas, r.blocos, descricao));
+        setBlocoActivo(r.blocos[0]);
+        toast.success(`Bloco ${r.blocos.join(", ")}: ${descricao}`);
+      },
+      (m) => toast.error(m),
+    );
+  };
+
+  /** Ditado numa linha: "bloco N descrição" muda ambos; senão só a descrição. */
+  const ditarLinha = (i: number) => {
+    if (aOuvir) return parar();
+    ouvir(
+      `linha-${i}`,
+      (frase) => {
+        const r = interpretarLegendaDitada(frase);
+        const anterior = linhas[i].bloco;
+        const bloco = r?.blocos[0] ?? anterior;
+        const descricao = r
+          ? descricaoOriginal(frase, r.descricao)
+          : frase.charAt(0).toUpperCase() + frase.slice(1).replace(/[.\s]+$/, "");
+        onLegendaChange(
+          linhas.map((item, j) => (j === i ? { bloco, descricao } : item)),
+        );
+        setBlocoActivo(bloco);
+        if (diagrama && bloco !== anterior) {
+          onDiagramaChange({
+            ...diagrama,
+            marcadores: diagrama.marcadores.map((m) =>
+              m.bloco === anterior ? { ...m, bloco } : m,
+            ),
+          });
+        }
+      },
+      (m) => toast.error(m),
+    );
+  };
+
   const adicionar = () => {
     const bloco = proximoBloco(linhas);
     onLegendaChange([...linhas, { bloco, descricao: "" }]);
@@ -74,8 +138,8 @@ export function LegendaBlocos({
 
       {linhas.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Dite &quot;App, legenda bloco um margem proximal&quot; ou acrescente
-          linhas à mão.
+          Carregue no microfone e dite &quot;bloco um margem proximal&quot;, ou
+          em mãos livres &quot;App, bloco um margem proximal&quot;.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -135,6 +199,17 @@ export function LegendaBlocos({
 
               <Button
                 type="button"
+                variant={aOuvir === `linha-${i}` ? "default" : "ghost"}
+                size="icon"
+                className="size-8 shrink-0"
+                aria-label={`Ditar legenda do bloco ${l.bloco}`}
+                onClick={() => ditarLinha(i)}
+              >
+                {aOuvir === `linha-${i}` ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+              </Button>
+
+              <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 className="size-8 shrink-0"
@@ -160,16 +235,29 @@ export function LegendaBlocos({
 
       )}
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="gap-2"
-        onClick={adicionar}
-      >
-        <Plus className="size-4" />
-        Adicionar bloco
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={aOuvir === "nova" ? "default" : "outline"}
+          size="sm"
+          className="gap-2"
+          onClick={ditarLinhaNova}
+        >
+          {aOuvir === "nova" ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+          {aOuvir === "nova" ? "A ouvir… (diga «bloco N descrição»)" : "Ditar bloco"}
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={adicionar}
+        >
+          <Plus className="size-4" />
+          Adicionar bloco
+        </Button>
+      </div>
 
       {aberto && (
         <DiagramaOrgao

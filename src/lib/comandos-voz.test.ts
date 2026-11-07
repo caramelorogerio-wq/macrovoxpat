@@ -182,3 +182,13 @@ describe("frases não reconhecidas", () => {
     expect(ouvir(frase)).toBeNull();
   });
 });
+
+import { interpretarLegendaDitada } from "./comandos-voz";
+describe("legenda ditada", () => {
+  it("bloco sem palavra legenda", () => {
+    expect(interpretarComando("bloco tres margem distal")).toEqual({ tipo: "legenda-bloco", blocos: [3], descricao: "Margem distal" });
+  });
+  it("ditado directo com intervalo", () => {
+    expect(interpretarLegendaDitada("Blocos 2 a 4 parede posterior")?.blocos).toEqual([2, 3, 4]);
+  });
+});
