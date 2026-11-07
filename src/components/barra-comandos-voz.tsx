@@ -2,7 +2,7 @@ import { Headphones, HelpCircle, Radio } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { LISTA_COMANDOS } from "@/lib/comandos-voz";
+import { LISTA_COMANDOS, type SugestaoComando } from "@/lib/comandos-voz";
 
 type Props = {
   activo: boolean;
@@ -17,6 +17,10 @@ type Props = {
   aGravar?: boolean;
   /** Escuta de comandos suspensa (parar só pelo botão). */
   vozSuspensa?: boolean;
+  /** Sugestões quando um comando não é reconhecido. */
+  sugestoes?: SugestaoComando[];
+  /** Chamado quando o utilizador escolhe uma sugestão. */
+  onSugestao?: (comando: SugestaoComando["comando"]) => void;
 };
 
 
@@ -31,6 +35,8 @@ export function BarraComandosVoz({
   onAjudaChange,
   aGravar = false,
   vozSuspensa = false,
+  sugestoes = [],
+  onSugestao,
 }: Props) {
 
   const [expandida] = useState(true);
@@ -48,9 +54,9 @@ export function BarraComandosVoz({
           </h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Diga <strong>&quot;App&quot;</strong> seguido do comando — por
-            exemplo, &quot;App, iniciar gravação&quot; ou &quot;Ditar, iniciar gravação&quot;. (&quot;Patologia Geral&quot;
-            também continua a funcionar.)
+            Diga <strong>&quot;Comando&quot;</strong> seguido da ordem — por
+            exemplo, &quot;Comando, exportar&quot;. Sem gravar, basta dizer &quot;exportar&quot; ou &quot;resumo técnico&quot;. (&quot;App&quot;, &quot;Ditar&quot; e &quot;Patologia&quot;
+            também continuam a funcionar.)
           </p>
         </div>
 
@@ -87,9 +93,9 @@ export function BarraComandosVoz({
               }`}
             />
             {aGravar
-              ? vozSuspensa
-                ? "A gravar — use o botão Parar Gravação"
-                : 'A gravar — diga "App, parar"'
+              ? vozSuspensa || !aEscutar
+                ? "A gravar — escuta indisponível: use o botão Parar Gravação ou a tecla Esc"
+                : 'A gravar — diga "parar" (ou "Comando, parar", ou Esc)'
               : activo
                 ? aEscutar
                   ? "À escuta de comandos"
@@ -103,11 +109,35 @@ export function BarraComandosVoz({
             </p>
           )}
 
+          {sugestoes.length > 0 && (
+            <div className="rounded-md border border-clinical/40 bg-clinical/10 p-3 space-y-2">
+              <p className="text-sm text-foreground">
+                Não percebi bem. Queria dizer…
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {sugestoes.map((s, i) => (
+                  <Button
+                    key={`${s.frase}-${i}`}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onSugestao?.(s.comando)}
+                  >
+                    {s.frase}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Diga <strong>&quot;Comando, repetir&quot;</strong> para tentar de novo,
+                ou <strong>&quot;Comando, ajuda&quot;</strong> para ver todos os comandos.
+              </p>
+            </div>
+          )}
 
           {pendente && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-              {pendente} — diga <strong>&quot;App, confirmar&quot;</strong> ou{" "}
-              <strong>&quot;App, cancelar&quot;</strong>.
+              {pendente} — diga <strong>&quot;Comando, confirmar&quot;</strong> ou{" "}
+              <strong>&quot;Comando, cancelar&quot;</strong>.
             </p>
           )}
 

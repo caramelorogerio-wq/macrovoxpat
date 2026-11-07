@@ -23,6 +23,7 @@ export type Comando =
   | { tipo: "ir-amostra"; indice: number }
   | { tipo: "apagar-amostra" }
   | { tipo: "resumo"; resumo: ResumoComando }
+  | { tipo: "resumo-guiado" }
   | { tipo: "legenda-bloco"; blocos: number[]; descricao: string }
   | { tipo: "apagar-legenda-bloco"; bloco: number }
   | { tipo: "diagrama"; aberto: boolean }
@@ -35,14 +36,31 @@ export type Comando =
   | { tipo: "sair" }
   | { tipo: "ajuda" }
   | { tipo: "confirmar" }
-  | { tipo: "cancelar" };
-
+  | { tipo: "cancelar" }
+  | { tipo: "repetir" };
 
 /** Acções que só executam depois de um "confirmar". */
 export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
   "apagar-amostra",
   "novo-relatorio",
   "sair",
+]);
+
+/**
+ * Comandos inequívocos e não destrutivos: executam logo que ouvidos
+ * (sem esperar pela pausa) e são aceites sem "App" fora da gravação.
+ */
+export const COMANDOS_IMEDIATOS: ReadonlySet<Comando["tipo"]> = new Set([
+  "iniciar-gravacao",
+  "resumo-guiado",
+  "resumo",
+  "parar-gravacao",
+  "nova-amostra",
+  "separar",
+  "otimizar",
+  "exportar",
+  "copiar",
+  "ajuda",
 ]);
 
 export const PALAVRA_ACTIVACAO = "App";
@@ -174,21 +192,30 @@ export const normalizar = (frase: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// Ordenadas da mais longa para a mais curta, para "apps" não ser lido como "ap".
 const VARIANTES_ACTIVACAO = [
-  "app",
-  "ap",
-  "apo",
-  "apps",
-  "ape",
-  "up",
-  "aplicacao",
+  "comando",
+  "comanda",
+  "camando",
+  "com ando",
+  "patologia geral app",
   "patologia geral",
   "patologia",
-  "patologia geral app",
   "ditar",
   "dita",
   "dite",
-];
+  "aplicacao",
+  "app",
+  "apps",
+  "apo",
+  "ape",
+  "api",
+  "hap",
+  "epa",
+  "ap",
+  "up",
+  "ep",
+].sort((a, b) => b.length - a.length);
 
 /** Palavras de enchimento que podem envolver o comando. */
 const FILLERS = [
@@ -237,7 +264,6 @@ export function extrairComando(frase: string): string | null {
   return null;
 }
 
-
 const numeroDe = (palavra: string | undefined): number | undefined => {
   if (!palavra) return undefined;
   if (/^\d+$/.test(palavra)) return Number(palavra);
@@ -247,7 +273,7 @@ const numeroDe = (palavra: string | undefined): number | undefined => {
 /**
  * Converte a leitura soletrada de um código em texto.
  *
- * "cê vinte e seis agá zero zero zero zero" → "C26H0000"
+ * "á vinte e cinco zero zero um"            → "A25001"
  * "dê eme pê traço zero zero um"            → "DMP-001"
  */
 function juntarCodigo(texto: string): string {
@@ -313,7 +339,7 @@ function juntarCodigo(texto: string): string {
 }
 
 
-function lerResumo(texto: string): ResumoComando | null {
+function lerResumoLivre(texto: string): ResumoComando | null {
   const resumo: ResumoComando = {};
 
   const frag = texto.match(/(\d+|[a-z]+)\s+fragmentos?/);
@@ -336,6 +362,201 @@ function lerResumo(texto: string): ResumoComando | null {
   return Object.keys(resumo).length > 0 ? resumo : null;
 }
 
+/** Atalhos curtos: "3 fragmentos", "não seccionado", "código 31077"… */
+function lerAtalhoResumo(texto: string): ResumoComando | null {
+  const resumo: ResumoComando = {};
+
+  const frag = texto.match(/^(?:sao |são )?(\d+|[a-z]+)\s+fragmentos?$/);
+  const fragN = numeroDe(frag?.[1]);
+  if (fragN !== undefined) resumo.fragmentos = fragN;
+
+  const blo = texto.match(/^(?:sao |são )?(\d+|[a-z]+)\s+blocos?$/);
+  const bloN = numeroDe(blo?.[1]);
+  if (bloN !== undefined) resumo.blocos = bloN;
+
+  if (/^nao seccionado$/.test(texto)) resumo.seccionado = false;
+  else if (/^seccionado$/.test(texto)) resumo.seccionado = true;
+
+  if (/^(inclusao total|total)$/.test(texto)) resumo.inclusao = "total";
+  if (/^(reserva|com reserva|inclusao com reserva)$/.test(texto))
+    resumo.inclusao = "reserva";
+
+  if (/^(codigo\s+)?(31057|31 057)$/.test(texto))
+    resumo.codigoFaturacao = "31057";
+  if (/^(codigo\s+)?(31077|31 077)$/.test(texto))
+    resumo.codigoFaturacao = "31077";
+
+  return Object.keys(resumo).length > 0 ? resumo : null;
+}
+
+/** Campos do resumo técnico, pela ordem do modo guiado. */
+export const CAMPOS_RESUMO = [
+  "fragmentos",
+  "blocos",
+  "seccionado",
+  "inclusao",
+] as const;
+
+export type CampoResumo = (typeof CAMPOS_RESUMO)[number];
+
+export const PERGUNTAS_RESUMO: Record<
+  CampoResumo,
+  { pergunta: string; exemplos: string }
+> = {
+  fragmentos: { pergunta: "Fragmentos?", exemplos: "diga o número — “três”" },
+  blocos: { pergunta: "Blocos?", exemplos: "diga o número — “dois”" },
+  seccionado: {
+    pergunta: "Seccionado?",
+    exemplos: "“seccionado” ou “não seccionado”",
+  },
+  inclusao: { pergunta: "Inclusão?", exemplos: "“total” ou “reserva”" },
+};
+
+export type RespostaResumo =
+  | { tipo: "valor"; resumo: ResumoComando }
+  | { tipo: "saltar" }
+  | { tipo: "voltar" }
+  | { tipo: "repetir" }
+  | { tipo: "sair" };
+
+/**
+ * Interpreta uma resposta solta dentro do modo guiado do resumo técnico.
+ * Não exige a palavra de activação.
+ */
+export function interpretarRespostaResumo(
+  campo: CampoResumo,
+  texto: string,
+): RespostaResumo | null {
+  const t = normalizar(texto);
+  if (!t) return null;
+
+  if (/^(saltar|salta|seguinte|proximo|proxima|passar)$/.test(t))
+    return { tipo: "saltar" };
+  if (/^(voltar|volta|anterior|atras)$/.test(t)) return { tipo: "voltar" };
+  if (/^(repetir|repete|outra vez)$/.test(t)) return { tipo: "repetir" };
+  if (/^(sair|terminar|termina|fechar|cancelar|pronto|fim)$/.test(t))
+    return { tipo: "sair" };
+
+  if (campo === "fragmentos" || campo === "blocos") {
+    const n = numeroDe(t.replace(/\s+(fragmentos?|blocos?)$/, "").trim());
+    if (n !== undefined) return { tipo: "valor", resumo: { [campo]: n } };
+    return null;
+  }
+
+  if (campo === "seccionado") {
+    if (/^(nao|nao seccionado|nao e seccionado)$/.test(t))
+      return { tipo: "valor", resumo: { seccionado: false } };
+    if (/^(sim|seccionado|e seccionado)$/.test(t))
+      return { tipo: "valor", resumo: { seccionado: true } };
+    return null;
+  }
+
+  if (campo === "inclusao") {
+    if (/^(total|inclusao total|um|1)$/.test(t))
+      return { tipo: "valor", resumo: { inclusao: "total" } };
+    if (/^(reserva|com reserva|inclusao com reserva|dois|2)$/.test(t))
+      return { tipo: "valor", resumo: { inclusao: "reserva" } };
+    return null;
+  }
+
+  if (/^(31057|31 057|um|1|primeiro)$/.test(t))
+    return { tipo: "valor", resumo: { codigoFaturacao: "31057" } };
+  if (/^(31077|31 077|dois|2|segundo)$/.test(t))
+    return { tipo: "valor", resumo: { codigoFaturacao: "31077" } };
+
+  return null;
+}
+
+/** Distância de Levenshtein normalizada (0 a 1, onde 1 = igual). */
+function semelhanca(a: string, b: string): number {
+  const s1 = normalizar(a).replace(/\s+/g, "");
+  const s2 = normalizar(b).replace(/\s+/g, "");
+  if (s1 === s2) return 1;
+  if (!s1.length || !s2.length) return 0;
+
+  const m = s1.length;
+  const n = s2.length;
+  const dp = Array<number>(n + 1).fill(0);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]!;
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = dp[j]!;
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[j] = prev;
+      } else {
+        dp[j] = 1 + Math.min(prev, dp[j]!, dp[j - 1]!);
+      }
+      prev = temp;
+    }
+  }
+
+  const dist = dp[n] ?? 0;
+  return 1 - dist / Math.max(m, n);
+}
+
+export type SugestaoComando = {
+  frase: string;
+  comando: Comando;
+  score: number;
+};
+
+const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
+  { frase: "análise", comando: { tipo: "ajuda" } }, // placeholder; analise tem valor dinâmico
+  { frase: "iniciar gravação", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "começar a gravar", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "gravar", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "parar gravação", comando: { tipo: "parar-gravacao" } },
+  { frase: "terminar gravação", comando: { tipo: "parar-gravacao" } },
+  { frase: "nova amostra", comando: { tipo: "nova-amostra" } },
+  { frase: "próxima amostra", comando: { tipo: "nova-amostra" } },
+  { frase: "amostra", comando: { tipo: "ir-amostra", indice: 1 } },
+  { frase: "apagar amostra", comando: { tipo: "apagar-amostra" } },
+  { frase: "remover amostra", comando: { tipo: "apagar-amostra" } },
+  { frase: "separar amostras", comando: { tipo: "separar" } },
+  { frase: "dividir amostras", comando: { tipo: "separar" } },
+  { frase: "otimizar relatório", comando: { tipo: "otimizar" } },
+  { frase: "optimizar", comando: { tipo: "otimizar" } },
+  { frase: "guardar relatório", comando: { tipo: "guardar" } },
+  { frase: "guardar", comando: { tipo: "guardar" } },
+  { frase: "exportar word", comando: { tipo: "exportar" } },
+  { frase: "exportar", comando: { tipo: "exportar" } },
+  { frase: "copiar texto", comando: { tipo: "copiar" } },
+  { frase: "copiar", comando: { tipo: "copiar" } },
+  { frase: "novo relatório", comando: { tipo: "novo-relatorio" } },
+  { frase: "limpar tudo", comando: { tipo: "novo-relatorio" } },
+  { frase: "terminar sessão", comando: { tipo: "sair" } },
+  { frase: "sair", comando: { tipo: "sair" } },
+  { frase: "ajuda", comando: { tipo: "ajuda" } },
+  { frase: "comandos", comando: { tipo: "ajuda" } },
+  { frase: "confirmar", comando: { tipo: "confirmar" } },
+  { frase: "sim", comando: { tipo: "confirmar" } },
+  { frase: "cancelar", comando: { tipo: "cancelar" } },
+  { frase: "não", comando: { tipo: "cancelar" } },
+  { frase: "repetir", comando: { tipo: "repetir" } },
+  { frase: "outra vez", comando: { tipo: "repetir" } },
+];
+
+/**
+ * Devolve os comandos mais parecidos com o texto ouvido.
+ * Limiares: ≥0.9 executa directamente; ≥0.6 sugere; abaixo só lista genérica.
+ */
+export function sugerirComandos(texto: string): SugestaoComando[] {
+  const t = normalizar(texto);
+  if (!t) return [];
+
+  const scored = FRASES_COMANDO.map(({ frase, comando }) => ({
+    frase,
+    comando,
+    score: semelhanca(t, frase),
+  }));
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.filter((s) => s.score >= 0.45).slice(0, 3);
+}
+
 /**
  * Interpreta o texto que vem depois da palavra de activação.
  * Devolve `null` quando nenhum comando é reconhecido.
@@ -346,6 +567,8 @@ export function interpretarComando(texto: string): Comando | null {
 
   if (/^(confirmar|confirmo|sim|confirma)$/.test(t)) return { tipo: "confirmar" };
   if (/^(cancelar|cancela|nao|anular)$/.test(t)) return { tipo: "cancelar" };
+  if (/^(repetir|repete|outra vez|diz outra vez)$/.test(t))
+    return { tipo: "repetir" };
 
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
@@ -400,25 +623,23 @@ export function interpretarComando(texto: string): Comando | null {
     if (valor) return { tipo: "analise", valor };
   }
 
-  if (
-    /^(iniciar|comecar|comeca|inicia|gravar|grava|retomar|continuar)(\s+(a\s+)?(gravacao|gravar|ditado|o ditado))?$/.test(
-      t,
-    )
-  )
+  if (/^(iniciar|comecar|come[cç]a|inicia|gravar|grava)( gravacao| a gravar)?$/.test(t))
     return { tipo: "iniciar-gravacao" };
 
-  if (
-    /^(parar|para|pare|parem|terminar|termina|termine|stop|fim|acabar|acaba)(\s+(a\s+|de\s+|o\s+)?(gravacao|gravar|ditado|ditar))?$/.test(
-      t,
-    )
-  )
+  if (/^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
     return { tipo: "parar-gravacao" };
 
-
-  if (/^(nova amostra|adicionar amostra|proxima amostra)$/.test(t))
+  if (/^(nova amostra|adicionar amostra|proxima amostra|mais uma amostra|outra amostra|amostra seguinte|amostra nova|proxima)$/.test(t))
     return { tipo: "nova-amostra" };
 
-  const irAmostra = t.match(/^(?:ir para |abrir |seleccionar |selecionar )?amostra (\d+|[a-z]+)$/);
+  const ORDINAIS: Record<string, number> = {
+    primeira: 1, segunda: 2, terceira: 3, quarta: 4, quinta: 5,
+    sexta: 6, setima: 7, oitava: 8, nona: 9, decima: 10,
+  };
+  const ordinal = t.match(/^(?:ir para |passa para |passar para |passa a |abrir )?(?:a )?(primeira|segunda|terceira|quarta|quinta|sexta|setima|oitava|nona|decima) amostra$/);
+  if (ordinal?.[1]) return { tipo: "ir-amostra", indice: ORDINAIS[ordinal[1]]! };
+
+  const irAmostra = t.match(/^(?:ir para |passa para |passar para |passa a |abrir |seleccionar |selecionar )?(?:a )?amostra (?:numero )?(\d+|[a-z]+)$/);
   const indice = numeroDe(irAmostra?.[1]);
   if (indice !== undefined && indice >= 1)
     return { tipo: "ir-amostra", indice };
@@ -426,33 +647,39 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(apagar|remover|eliminar) (a )?amostra$/.test(t))
     return { tipo: "apagar-amostra" };
 
-  if (/^(separar amostras|separar|dividir amostras)$/.test(t))
+  if (/^(separar amostras|separar|dividir amostras|dividir)$/.test(t))
     return { tipo: "separar" };
 
-  if (/^(otimizar|optimizar|otimiza|otimizar relatorio|otimizar com ia|optimizar com ia)$/.test(t))
+  if (/^(otimizar|optimizar|otimiza|optimiza|otimizar relatorio|optimizar relatorio|otimizar texto|otimizar com ia|optimizar com ia|rever texto)$/.test(t))
     return { tipo: "otimizar" };
 
   if (/^(guardar|guarda|gravar relatorio|guardar relatorio)$/.test(t))
     return { tipo: "guardar" };
 
-  if (/^(exportar|exporta|exportar word|exportar documento|exportar para word)$/.test(t))
+  if (/^(exportar|esportar|exporta|esporta|descarregar|descarrega|gerar (o )?(word|documento|ficheiro|relatorio)|fazer (o )?word|passar (para|pra) (o )?word|(exportar|esportar|descarregar) (o |para |pra )?(o )?(word|documento|ficheiro|relatorio))$/.test(t))
     return { tipo: "exportar" };
 
-  if (/^(copiar|copia|copiar texto)$/.test(t)) return { tipo: "copiar" };
+  if (/^(resumo|resumo tecnico|preencher resumo|fazer resumo|resumo guiado)$/.test(t))
+    return { tipo: "resumo-guiado" };
 
-  if (/^(novo relatorio|limpar|limpa|apagar tudo)$/.test(t))
+  if (/^resumo tecnico\b/.test(t)) {
+    const livre = lerResumoLivre(t);
+    if (livre) return { tipo: "resumo", resumo: livre };
+  }
+
+  const atalho = lerAtalhoResumo(t);
+  if (atalho) return { tipo: "resumo", resumo: atalho };
+
+  if (/^(copiar|copia|copiar texto|copiar tudo|copia tudo)$/.test(t)) return { tipo: "copiar" };
+
+  if (/^(novo relatorio|nova analise|outra analise|proxima analise|limpar|limpa|apagar tudo)$/.test(t))
     return { tipo: "novo-relatorio" };
 
   if (/^(terminar sessao|sair|fechar sessao|logout)$/.test(t))
     return { tipo: "sair" };
 
-  if (/^resumo tecnico\b/.test(t) || /\b(fragmentos?|blocos?)\b/.test(t)) {
-    const resumo = lerResumo(t);
-    if (resumo) return { tipo: "resumo", resumo };
-  }
-
   // Tolerância final: frases com palavras a mais ("parar a gravação já", …).
-  if (/\b(parar|pare|para|terminar|termina|stop|fim)\b/.test(t))
+  if (/\b(parar|pare|para|terminar|termina|termine|stop|fim)\b/.test(t))
     return { tipo: "parar-gravacao" };
 
   if (/\b(iniciar|comecar|inicia|comeca)\b.*\b(gravacao|gravar|ditado)\b/.test(t))
@@ -461,52 +688,59 @@ export function interpretarComando(texto: string): Comando | null {
   return null;
 }
 
-
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
-  { dizer: "App, análise C26H0000", faz: "Preenche o n.º da análise" },
+  { dizer: "Comando, análise <número>", faz: "Preenche o n.º da análise" },
   {
-    dizer: "App, análise cê vinte e seis agá zero zero zero zero",
-    faz: "Mesmo código, ditado letra a letra (C26H0000)",
-  },
-  {
-    dizer: "App, análise dê eme pê traço zero zero um",
-    faz: "Códigos com traço ou barra (DMP-001)",
+    dizer: "Comando, análise dê eme pê traço zero zero um",
+    faz: "Códigos ditados letra a letra, com traço ou barra",
   },
 
-  { dizer: "App, iniciar gravação", faz: "Começa a gravar" },
-  { dizer: "App, parar", faz: "Pára e transcreve" },
-  { dizer: "App, nova amostra", faz: "Cria uma amostra" },
-  { dizer: "App, amostra dois", faz: "Muda para essa amostra" },
-  { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
-  { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
-  {
-    dizer: "App, legenda bloco um margem proximal",
-    faz: "Escreve a legenda desse bloco",
-  },
-  {
-    dizer: "App, legenda blocos dois a quatro parede posterior",
-    faz: "Mesma legenda para vários blocos",
-  },
-  {
-    dizer: "App, apagar legenda bloco três",
-    faz: "Remove a legenda desse bloco",
-  },
-  { dizer: "App, abrir diagrama", faz: "Mostra o esquema do órgão" },
-  { dizer: "App, fechar diagrama", faz: "Esconde o esquema" },
-
-  {
-    dizer: "App, resumo técnico 3 fragmentos 2 blocos seccionado total",
-    faz: "Preenche o resumo técnico",
-  },
-  { dizer: "App, otimizar", faz: "Otimiza o relatório com IA" },
-  { dizer: "App, guardar", faz: "Guarda o relatório" },
-  { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
-  { dizer: "App, copiar", faz: "Copia o texto" },
-  { dizer: "App, novo relatório", faz: "Limpa tudo (confirmar)" },
-  { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
-  { dizer: "App, ajuda", faz: "Mostra esta lista" },
+  { dizer: "Comando, iniciar gravação", faz: "Começa a gravar" },
+  { dizer: "Comando, parar", faz: "Pára e transcreve" },
+  { dizer: "Comando, nova amostra", faz: "Cria uma amostra" },
+  { dizer: "Comando, amostra dois", faz: "Muda para essa amostra" },
+  { dizer: "Comando, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
+  { dizer: "Comando, separar amostras", faz: "Separa o ditado em amostras" },
+  { dizer: "Comando, bloco um margem proximal", faz: "Escreve a legenda desse bloco" },
+  { dizer: "Comando, legenda blocos dois a quatro parede posterior", faz: "Mesma legenda para vários blocos" },
+  { dizer: "Comando, apagar legenda bloco três", faz: "Remove a legenda desse bloco" },
+  { dizer: "Comando, abrir diagrama", faz: "Mostra o esquema do órgão" },
+  { dizer: "Comando, fechar diagrama", faz: "Esconde o esquema" },
+  { dizer: "Comando, otimizar", faz: "Otimiza o relatório com IA" },
+  { dizer: "Comando, guardar", faz: "Guarda o relatório" },
+  { dizer: "Comando, exportar", faz: "Gera o ficheiro Word" },
+  { dizer: "Comando, copiar", faz: "Copia o texto" },
+  { dizer: "Comando, repetir", faz: "Repete a última frase ouvida" },
+  { dizer: "Comando, novo relatório", faz: "Limpa tudo (confirmar)" },
+  { dizer: "Comando, terminar sessão", faz: "Sai da conta (confirmar)" },
+  { dizer: "Comando, resumo técnico", faz: "Preenche o resumo passo a passo" },
+  { dizer: "3 fragmentos · 2 blocos · seccionado · inclusão total", faz: "Atalhos do resumo" },
+  { dizer: "Sem gravar: análise DMP 3057, exportar, otimizar, copiar…", faz: "Funcionam sem dizer «Comando»" },
+  { dizer: "Comando, ajuda", faz: "Mostra esta lista" },
 ];
+
+/** Palavras que param a gravação mesmo sem a palavra de activação. */
+export const PALAVRAS_PARAGEM = [
+  "parar",
+  "stop",
+  "terminar",
+  "termina",
+  "fim de ditado",
+  "fim do ditado",
+  "parar gravacao",
+  "parar gravação",
+];
+
+/**
+ * Durante a gravação aceita-se uma paragem directa: a frase é só uma
+ * palavra de paragem (com ou sem "app" à frente).
+ */
+export function ehParagemDirecta(texto: string): boolean {
+  const t = normalizar(texto).replace(/^(app|comando|ditar|patologia)[,\s]+/, "").trim();
+  if (!t) return false;
+  return PALAVRAS_PARAGEM.some((p) => normalizar(p) === t);
+}
 
 /**
  * Interpreta uma frase ditada directamente no campo de legenda

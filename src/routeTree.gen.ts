@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedCompararRouteImport } from './routes/_authenticated/comparar'
 import { Route as ApiTranscreverRouteImport } from './routes/api/transcrever'
 
 const IndexRoute = IndexRouteImport.update({
@@ -34,6 +35,11 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCompararRoute = AuthenticatedCompararRouteImport.update({
+  id: '/comparar',
+  path: '/comparar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiTranscreverRoute = ApiTranscreverRouteImport.update({
   id: '/api/transcrever',
   path: '/api/transcrever',
@@ -44,12 +50,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
+  '/comparar': typeof AuthenticatedCompararRoute
   '/api/transcrever': typeof ApiTranscreverRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
+  '/comparar': typeof AuthenticatedCompararRoute
   '/api/transcrever': typeof ApiTranscreverRoute
 }
 export interface FileRoutesById {
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
+  '/_authenticated/comparar': typeof AuthenticatedCompararRoute
   '/api/transcrever': typeof ApiTranscreverRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/app' | '/api/transcrever'
+  fullPaths: '/' | '/auth' | '/app' | '/comparar' | '/api/transcrever'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app' | '/api/transcrever'
+  to: '/' | '/auth' | '/app' | '/comparar' | '/api/transcrever'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/app'
+    | '/_authenticated/comparar'
     | '/api/transcrever'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comparar': {
+      id: '/_authenticated/comparar'
+      path: '/comparar'
+      fullPath: '/comparar'
+      preLoaderRoute: typeof AuthenticatedCompararRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/transcrever': {
       id: '/api/transcrever'
       path: '/api/transcrever'
@@ -123,10 +140,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
+  AuthenticatedCompararRoute: typeof AuthenticatedCompararRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRoute,
+  AuthenticatedCompararRoute: AuthenticatedCompararRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
