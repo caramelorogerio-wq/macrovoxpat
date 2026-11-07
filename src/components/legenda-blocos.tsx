@@ -71,7 +71,7 @@ export function LegendaBlocos({
         }
         const descricao = descricaoOriginal(frase, r.descricao);
         onLegendaChange(aplicarLegenda(linhas, r.blocos, descricao));
-        setBlocoActivo(r.blocos[0]);
+        setBlocoActivo(r.blocos[0] ?? 1);
         toast.success(`Bloco ${r.blocos.join(", ")}: ${descricao}`);
       },
       (m) => toast.error(m),
