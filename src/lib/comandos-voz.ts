@@ -623,10 +623,10 @@ export function interpretarComando(texto: string): Comando | null {
     if (valor) return { tipo: "analise", valor };
   }
 
-  if (/^(iniciar|comecar|come[cç]a|inicia|gravar|grava)( gravacao| a gravar)?$/.test(t))
+  if (/^(iniciar|comecar|comeca|inicia|gravar|grava|retomar|continuar)(\s+(a\s+)?(gravacao|gravar|ditado|o ditado))?$/.test(t))
     return { tipo: "iniciar-gravacao" };
 
-  if (/^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
+  if (/^(parar|para|pare|parem|terminar|termina|termine|stop|fim|acabar|acaba)(\s+(a\s+|de\s+|o\s+)?(gravacao|gravar|ditado|ditar))?$/.test(t))
     return { tipo: "parar-gravacao" };
 
   if (/^(nova amostra|adicionar amostra|proxima amostra|mais uma amostra|outra amostra|amostra seguinte|amostra nova|proxima)$/.test(t))
