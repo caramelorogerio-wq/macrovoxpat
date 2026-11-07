@@ -17,9 +17,9 @@ import rim from "@/assets/esquemas/esquema-anatomico-da-rim.webp.asset.json";
 import sigmoide from "@/assets/esquemas/esquema-anatomico-da-sigmoide.png.asset.json";
 import vesicula from "@/assets/esquemas/esquema-anatomico-da-vesicula-biliar.png.asset.json";
 import esofago from "@/assets/esquemas/esquema-anatomico-do-esofago.png.asset.json";
-import estomago from "@/assets/esquemas/esquema-anatomico-do-estomago.png.asset.json";
-import figado from "@/assets/esquemas/esquema-anatomico-do-figado.png.asset.json";
-import mama from "@/assets/esquemas/esquema-anatomico-da-mama.svg";
+import estomago from "@/assets/esquemas/netter-estomago.jpg";
+import figado from "@/assets/esquemas/netter-figado.jpg";
+import mama from "@/assets/esquemas/netter-mama.jpg";
 import uteroAnexos from "@/assets/esquemas/esquema-utero-anexos.jpg";
 import pulmao from "@/assets/esquemas/esquema-pulmao.jpg";
 import tiroide from "@/assets/esquemas/esquema-tiroide.jpg";
@@ -29,7 +29,7 @@ import intestinoDelgado from "@/assets/esquemas/esquema-intestino-delgado.jpg";
 import baco from "@/assets/esquemas/esquema-baco.jpg";
 import pancreas from "@/assets/esquemas/esquema-pancreas.jpg";
 import bexigaUreter from "@/assets/esquemas/esquema-bexiga-ureter.jpg";
-import testiculo from "@/assets/esquemas/esquema-anatomico-do-testiculo.svg";
+import testiculo from "@/assets/esquemas/netter-testiculo.jpg";
 import placenta from "@/assets/esquemas/esquema-placenta.jpg";
 import osso from "@/assets/esquemas/esquema-osso.jpg";
 import musculo from "@/assets/esquemas/esquema-musculo.jpg";
@@ -345,7 +345,7 @@ export const ORGAOS: Orgao[] = [
   {
     id: "figado",
     nome: "Fígado (esquema seccionado)",
-    imagem: figado.url,
+    imagem: figado,
     largura: 1536,
     altura: 1024,
     zonas: [
@@ -361,29 +361,29 @@ export const ORGAOS: Orgao[] = [
       { id: "segmento-vi", nome: "Segmento VI", d: cx(31, 54, 9, 9) },
       { id: "segmento-vii", nome: "Segmento VII", d: cx(36, 34, 9, 9) },
       { id: "segmento-viii", nome: "Segmento VIII", d: cx(23, 33, 9, 9) },
-      { id: "veia-cava", nome: "Veia cava inferior", d: cx(44, 10, 11, 12) },
+      { id: "veia-cava", nome: "Veia cava inferior", d: cx(44, 4, 7, 14) },
       { id: "veia-hepatica-direita", nome: "Veia hepática direita", d: cx(35, 21, 8, 8) },
       { id: "veia-hepatica-media", nome: "Veia hepática média", d: cx(45, 24, 7, 10) },
       { id: "veia-hepatica-esquerda", nome: "Veia hepática esquerda", d: cx(59, 24, 8, 7) },
-      { id: "veia-porta", nome: "Veia porta", d: cx(45, 64, 8, 8) },
-      { id: "arteria-hepatica", nome: "Artéria hepática", d: cx(52, 68, 7, 7) },
-      { id: "ducto-hepatico", nome: "Ducto hepático comum", d: cx(50, 76, 8, 7) },
-      { id: "vesicula", nome: "Vesícula biliar", d: cx(30, 76, 11, 18) },
+      { id: "veia-porta", nome: "Veia porta", d: cx(45, 58, 5, 9) },
+      { id: "arteria-hepatica", nome: "Artéria hepática", d: cx(50, 56, 4, 14) },
+      { id: "ducto-hepatico", nome: "Ducto hepático comum", d: cx(42, 60, 4, 18) },
+      { id: "vesicula", nome: "Vesícula biliar", d: cx(28, 63, 15, 32) },
     ],
   },
   {
     id: "estomago",
     nome: "Estômago (gastrectomia)",
-    imagem: estomago.url,
-    largura: 1549,
-    altura: 1015,
+    imagem: estomago,
+    largura: 1552,
+    altura: 1024,
     zonas: [
       { id: "margem-esofagica", nome: "Margem de secção esofágica", d: cx(45, 3, 11, 9) },
       { id: "cardia", nome: "Cárdia", d: cx(42, 19, 9, 8) },
       { id: "juncao", nome: "Junção gastroesofágica", d: cx(51, 17, 10, 8) },
       { id: "fundo", nome: "Fundo gástrico", d: cx(28, 20, 14, 12) },
       { id: "corpo", nome: "Corpo gástrico", d: cx(39, 49, 12, 12) },
-      { id: "lesao", nome: "Lesão / tumor", d: cx(45, 38, 13, 10) },
+      { id: "lesao", nome: "Lesão / tumor", d: cx(44, 40, 14, 12) },
       { id: "curvatura-maior", nome: "Curvatura maior", d: cx(28, 38, 8, 16) },
       { id: "curvatura-menor", nome: "Curvatura menor", d: cx(62, 38, 8, 16) },
       { id: "antro", nome: "Antro", d: cx(41, 71, 13, 9) },
@@ -396,17 +396,18 @@ export const ORGAOS: Orgao[] = [
     nome: "Mama (peça de tumorectomia / mastectomia)",
     imagem: mama,
     largura: 1200,
-    altura: 900,
+    altura: 912,
     zonas: [
-      { id: "mamilo-areola", nome: "Complexo mamilo-aréola", d: cx(23, 40, 10, 13) },
-      { id: "quadrante-supero-interno", nome: "Quadrante superointerno", d: cx(38, 22, 18, 22) },
-      { id: "quadrante-supero-externo", nome: "Quadrante superoexterno", d: cx(58, 20, 20, 25) },
-      { id: "quadrante-infero-interno", nome: "Quadrante inferointerno", d: cx(37, 48, 18, 23) },
-      { id: "quadrante-infero-externo", nome: "Quadrante inferoexterno", d: cx(57, 47, 21, 24) },
-      { id: "retroareolar", nome: "Região retroareolar", d: cx(31, 37, 13, 16) },
-      { id: "pele", nome: "Pele", d: cx(19, 17, 59, 10) },
-      { id: "margem-profunda", nome: "Margem profunda", d: cx(69, 51, 16, 21) },
-      { id: "prolongamento-axilar", nome: "Prolongamento axilar", d: cx(83, 40, 14, 20) },
+      { id: "mamilo-areola", nome: "Complexo mamilo-aréola", d: cx(14, 32, 15, 22) },
+      { id: "quadrante-supero-interno", nome: "Quadrante superointerno", d: cx(4, 14, 22, 18) },
+      { id: "quadrante-supero-externo", nome: "Quadrante superoexterno", d: cx(44, 18, 34, 26) },
+      { id: "quadrante-infero-interno", nome: "Quadrante inferointerno", d: cx(8, 58, 30, 28) },
+      { id: "quadrante-infero-externo", nome: "Quadrante inferoexterno", d: cx(40, 46, 22, 36) },
+      { id: "lesao", nome: "Lesão / tumor", d: cx(56, 20, 16, 21) },
+      { id: "retroareolar", nome: "Região retroareolar", d: cx(29, 38, 10, 16) },
+      { id: "pele", nome: "Pele (elipse cutânea)", d: cx(30, 10, 28, 18) },
+      { id: "margem-profunda", nome: "Margem profunda (fáscia)", d: cx(60, 58, 20, 24) },
+      { id: "prolongamento-axilar", nome: "Prolongamento axilar / gânglios", d: cx(80, 1, 18, 26) },
     ],
   },
   {
@@ -547,14 +548,14 @@ export const ORGAOS: Orgao[] = [
     id: "testiculo",
     nome: "Testículo (orquiectomia)",
     imagem: testiculo,
-    largura: 900,
-    altura: 850,
+    largura: 912,
+    altura: 848,
     zonas: [
-      { id: "funiculo", nome: "Funículo espermático / margem", d: cx(48, 2, 27, 24) },
-      { id: "testiculo", nome: "Parênquima testicular", d: cx(27, 28, 43, 54) },
-      { id: "tunica", nome: "Túnica albugínea", d: cx(23, 23, 51, 63) },
-      { id: "epididimo", nome: "Epidídimo", d: cx(58, 28, 18, 49) },
-      { id: "rete", nome: "Rete testis / mediastino", d: cx(51, 38, 12, 28) },
+      { id: "funiculo", nome: "Funículo espermático / margem", d: cx(44, 0, 26, 26) },
+      { id: "testiculo", nome: "Parênquima testicular", d: cx(28, 38, 18, 50) },
+      { id: "tunica", nome: "Túnica albugínea", d: cx(24, 30, 4, 60) },
+      { id: "epididimo", nome: "Epidídimo", d: cx(62, 26, 14, 64) },
+      { id: "rete", nome: "Rete testis / mediastino", d: cx(48, 42, 8, 30) },
     ],
   },
   {
