@@ -814,8 +814,6 @@ function AppPage() {
         "@/lib/relatorio-docx"
       );
 
-      const usaveis = amostras.filter((a) => a.texto.trim());
-
       const { pngDiagrama } = await import("@/lib/diagrama-svg");
       const { legendaTexto } = await import("@/lib/legendas");
       const { orgaoPorId } = await import("@/lib/orgaos");
