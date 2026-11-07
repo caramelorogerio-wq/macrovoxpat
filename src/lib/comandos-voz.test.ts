@@ -192,3 +192,12 @@ describe("legenda ditada", () => {
     expect(interpretarLegendaDitada("Blocos 2 a 4 parede posterior")?.blocos).toEqual([2, 3, 4]);
   });
 });
+
+import { extrairComando as _ext } from "./comandos-voz";
+import { describe as _d, it as _i, expect as _e } from "vitest";
+_d("activação ditar", () => {
+  _i("aceita Ditar como prefixo", () => {
+    _e(_ext("Ditar, parar")).toBe("parar");
+    _e(_ext("Ditar, bloco um margem proximal")).toBe("bloco um margem proximal");
+  });
+});
