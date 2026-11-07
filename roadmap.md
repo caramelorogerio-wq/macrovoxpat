@@ -1,0 +1,2 @@
+- [x] Atualizar Patologia Geral igual à DermaVoz atual (sem guardar relatórios, retenção, voz)
+- [ ] Esquemas em falta (mama, testículo…) a partir do Netter (link slideshare do utilizador)

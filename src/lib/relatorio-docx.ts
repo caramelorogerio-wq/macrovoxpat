@@ -6,7 +6,6 @@ import {
   Header,
   HeadingLevel,
   ImageRun,
-
   PageNumber,
   Packer,
   Paragraph,
@@ -57,16 +56,14 @@ export const TEMPLATES: {
 export type AmostraDocx = {
   titulo: string;
   texto: string;
-  resumo: ResumoDocx;
+  resumo?: ResumoDocx;
   /** Linhas "Bloco 1 — descrição". */
   legenda?: string[];
   /** Imagem PNG do esquema do órgão com os blocos marcados. */
   diagramaPng?: Uint8Array;
   /** Proporção largura/altura da imagem do esquema (por omissão 1). */
   diagramaProporcao?: number;
-
 };
-
 
 export type RelatorioDocx = {
   numeroAnalise: string;
@@ -104,9 +101,9 @@ const SEM_BORDAS = {
   insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
 };
 
-const celula = (campo?: [string, string]) =>
+const celula = (campo?: [string, string], largura = COLUNA) =>
   new TableCell({
-    width: { size: COLUNA, type: WidthType.DXA },
+    width: { size: largura, type: WidthType.DXA },
     borders: SEM_BORDAS,
     margins: { top: 20, bottom: 20, left: 0, right: 120 },
     children: [
@@ -130,6 +127,84 @@ const celula = (campo?: [string, string]) =>
       }),
     ],
   });
+
+/** Campos do resumo técnico em colunas paralelas, sem grelha visível.
+ *  Em relatórios com várias amostras usa uma só coluna para dar destaque
+ *  ao intervalo contínuo de blocos. */
+const tabelaResumo = (campos: [string, string][], colunas: 1 | 2 = 2) => {
+  const linhas: TableRow[] = [];
+
+  if (colunas === 1) {
+    for (const campo of campos) {
+      linhas.push(
+        new TableRow({
+          children: [celula(campo, LARGURA_UTIL)],
+        }),
+      );
+    }
+  } else {
+    for (let i = 0; i < campos.length; i += 2) {
+      linhas.push(
+        new TableRow({
+          children: [celula(campos[i]), celula(campos[i + 1])],
+        }),
+      );
+    }
+  }
+
+  return new Table({
+    width: { size: LARGURA_UTIL, type: WidthType.DXA },
+    columnWidths: colunas === 1 ? [LARGURA_UTIL] : [COLUNA, COLUNA],
+    borders: SEM_BORDAS,
+    rows: linhas,
+  });
+};
+
+const celulaTexto = (texto: string, negrito = false) =>
+  new TableCell({
+    width: { size: COLUNA, type: WidthType.DXA },
+    borders: SEM_BORDAS,
+    margins: { top: 20, bottom: 20, left: 0, right: 120 },
+    children: [
+      new Paragraph({
+        spacing: { after: 0 },
+        children: [
+          new TextRun({
+            text: texto,
+            bold: negrito,
+            font: "Century Gothic",
+            size: 20,
+          }),
+        ],
+      }),
+    ],
+  });
+
+/** Quadro final com os códigos de facturação de cada amostra. */
+const tabelaFaturacao = (entradas: [string, string][]) =>
+  new Table({
+    width: { size: LARGURA_UTIL, type: WidthType.DXA },
+    columnWidths: [COLUNA, COLUNA],
+    borders: SEM_BORDAS,
+    rows: entradas.map(([nome, codigo]) =>
+      new TableRow({
+        children: [celulaTexto(nome, true), celulaTexto(codigo)],
+      }),
+    ),
+  });
+
+/** "1 a 3", "4 a 6" ou "4" (bloco único). Há sempre pelo menos 1 bloco. */
+export const intervaloBlocos = (inicio: number, quantidade: number) => {
+  const n = Math.max(1, quantidade);
+  if (n === 1) return String(inicio);
+  return `${inicio} a ${inicio + n - 1}`;
+};
+
+/** "N.º do bloco" (1) ou "N.º dos blocos" (2+). */
+export const rotuloBlocos = (quantidade: number) =>
+  Math.max(1, quantidade) === 1 ? "N.º do bloco" : "N.º dos blocos";
+
+
 
 const separador = () =>
   new Paragraph({
@@ -213,10 +288,7 @@ export async function gerarRelatorioDocx({
   ): (Paragraph | Table)[] => {
     const paragrafos: (Paragraph | Table)[] = [];
 
-    if (
-      varias ||
-      (amostra.titulo.trim() && amostra.titulo.trim() !== titulo)
-    ) {
+    if (varias || amostra.titulo.trim()) {
       paragrafos.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
@@ -250,6 +322,30 @@ export async function gerarRelatorioDocx({
             }),
         ),
     );
+
+    if (amostra.resumo) {
+      const r = amostra.resumo;
+      const campos: [string, string][] = [
+        ["Fragmentos", String(r.fragmentos)],
+        [rotuloBlocos(r.blocos), intervaloBlocos(primeiroBloco, r.blocos)],
+        ["Seccionado", r.seccionado ? "Sim" : "Não"],
+        ["Inclusão", r.inclusao === "total" ? "Total" : "Com reserva"],
+      ];
+      paragrafos.push(
+        new Paragraph({
+          spacing: { before: 120, after: 120 },
+          children: campos.flatMap(([rot, val], i) => [
+            new TextRun({
+              text: `${i ? " · " : ""}${rot}: `,
+              bold: true,
+              font: "Century Gothic",
+              size: 20,
+            }),
+            new TextRun({ text: val, font: "Century Gothic", size: 20 }),
+          ]),
+        }),
+      );
+    }
 
     const legenda = (amostra.legenda ?? []).filter((l) => l.trim());
 
@@ -435,22 +531,22 @@ export async function gerarRelatorioDocx({
             ],
           }),
 
-          ...(varias
+          ...((varias
             ? [
                 linha("N.º da análise", titulo),
                 linha("N.º de amostras", String(lista.length)),
               ]
-            : []),
+            : []).flat() as Paragraph[]),
 
-          ...lista.flatMap((amostra, indice) => {
-            const primeiro =
+          ...(lista.flatMap((amostra, indice) =>
+            corpoAmostra(
+              amostra,
+              indice,
               lista
                 .slice(0, indice)
-                .reduce((t, a) => t + (a.resumo.blocos || 0), 0) + 1;
-
-            return corpoAmostra(amostra, indice, primeiro);
-          }),
-
+                .reduce((t, a) => t + Math.max(1, a.resumo?.blocos ?? 1), 0) + 1,
+            ),
+          ) as Paragraph[]),
         ],
       },
     ],

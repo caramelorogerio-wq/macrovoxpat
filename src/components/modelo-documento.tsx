@@ -79,7 +79,7 @@ export function ModeloDocumento({
                 id="servico"
                 value={servico}
                 onChange={(e) => onServicoChange(e.target.value)}
-                placeholder="Serviço de Dermatopatologia"
+                placeholder="Serviço de Anatomia Patológica"
               />
             </div>
           </div>

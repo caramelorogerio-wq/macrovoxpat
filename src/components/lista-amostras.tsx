@@ -3,10 +3,14 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ResumoTecnico,
+  type CampoResumoActivo,
+} from "@/components/resumo-tecnico";
 import { LegendaBlocos } from "@/components/legenda-blocos";
 import type { Amostra, ResumoAmostra } from "@/lib/amostras";
-import { contarPalavras } from "@/lib/amostras";
 import type { Diagrama, LinhaLegenda } from "@/lib/legendas";
+import { contarPalavras } from "@/lib/amostras";
 
 type Props = {
   amostras: Amostra[];
@@ -17,12 +21,15 @@ type Props = {
   onResumoChange: (id: string, resumo: ResumoAmostra) => void;
   onLegendaChange: (id: string, legenda: LinhaLegenda[]) => void;
   onDiagramaChange: (id: string, diagrama: Diagrama | null) => void;
-  onAdicionar: () => void;
-  onRemover: (id: string) => void;
-  onMover: (id: string, direccao: -1 | 1) => void;
   /** Diagrama aberto por comando de voz, na amostra activa. */
   diagramaAberto?: boolean;
   onDiagramaAbertoChange?: (aberto: boolean) => void;
+  onAdicionar: () => void;
+  onRemover: (id: string) => void;
+  onMover: (id: string, direccao: -1 | 1) => void;
+  campoResumoActivo?: CampoResumoActivo;
+  numeroAnalise?: string;
+  onNumeroAnaliseChange?: (valor: string) => void;
 };
 
 export function ListaAmostras({
@@ -30,14 +37,18 @@ export function ListaAmostras({
   activaId,
   onActivar,
   onTituloChange,
+  numeroAnalise,
+  onNumeroAnaliseChange,
   onTextoChange,
+  onResumoChange,
   onLegendaChange,
   onDiagramaChange,
+  diagramaAberto,
+  onDiagramaAbertoChange,
   onAdicionar,
   onRemover,
   onMover,
-  diagramaAberto,
-  onDiagramaAbertoChange,
+  campoResumoActivo = null,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -60,17 +71,28 @@ export function ListaAmostras({
                   htmlFor={`titulo-${amostra.id}`}
                   className="text-sm font-medium text-foreground"
                 >
-                  Título da amostra {indice + 1}
+                  {indice === 0 && onNumeroAnaliseChange
+                    ? "Número da análise"
+                    : `Título da amostra ${indice + 1}`}
                 </label>
 
-                <Input
-                  id={`titulo-${amostra.id}`}
-                  value={amostra.titulo}
-                  onChange={(e) =>
-                    onTituloChange(amostra.id, e.target.value)
-                  }
-                  placeholder={`Amostra ${indice + 1}`}
-                />
+                {indice === 0 && onNumeroAnaliseChange ? (
+                  <Input
+                    id={`titulo-${amostra.id}`}
+                    value={numeroAnalise ?? ""}
+                    onChange={(e) => onNumeroAnaliseChange(e.target.value)}
+                    placeholder="Ex.: C26H0000"
+                  />
+                ) : (
+                  <Input
+                    id={`titulo-${amostra.id}`}
+                    value={amostra.titulo}
+                    onChange={(e) =>
+                      onTituloChange(amostra.id, e.target.value)
+                    }
+                    placeholder={`Amostra ${indice + 1}`}
+                  />
+                )}
               </div>
 
               <div className="flex items-center gap-1">
@@ -123,6 +145,35 @@ export function ListaAmostras({
               className="min-h-[220px] resize-none text-sm leading-relaxed"
             />
 
+            <ResumoTecnico
+              idPrefix={amostra.id}
+              compacto
+              campoActivo={activa ? campoResumoActivo : null}
+              fragmentos={amostra.resumo.fragmentos}
+              blocos={amostra.resumo.blocos}
+              seccionado={amostra.resumo.seccionado}
+              inclusao={amostra.resumo.inclusao}
+              codigoFaturacao={amostra.resumo.codigoFaturacao}
+              onFragmentosChange={(v) =>
+                onResumoChange(amostra.id, { ...amostra.resumo, fragmentos: v })
+              }
+              onBlocosChange={(v) =>
+                onResumoChange(amostra.id, { ...amostra.resumo, blocos: v })
+              }
+              onSeccionadoChange={(v) =>
+                onResumoChange(amostra.id, { ...amostra.resumo, seccionado: v })
+              }
+              onInclusaoChange={(v) =>
+                onResumoChange(amostra.id, { ...amostra.resumo, inclusao: v })
+              }
+              onCodigoFaturacaoChange={(v) =>
+                onResumoChange(amostra.id, {
+                  ...amostra.resumo,
+                  codigoFaturacao: v,
+                })
+              }
+            />
+
             <LegendaBlocos
               legenda={amostra.legenda ?? []}
               diagrama={amostra.diagrama ?? null}
@@ -140,6 +191,7 @@ export function ListaAmostras({
                   }
                 : {})}
             />
+
           </section>
         );
       })}

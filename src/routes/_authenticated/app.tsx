@@ -14,18 +14,37 @@ import {
   Brain,
   Power,
   SplitSquareVertical,
+  CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
 import { BarraComandosVoz } from "@/components/barra-comandos-voz";
 import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
 import {
+  CAMPOS_RESUMO,
   COMANDOS_DESTRUTIVOS,
+  PERGUNTAS_RESUMO,
   extrairComando,
+  ehParagemDirecta,
+  COMANDOS_IMEDIATOS,
   interpretarComando,
+  interpretarRespostaResumo,
+  sugerirComandos,
+  type CampoResumo,
   type Comando,
+  type SugestaoComando,
 } from "@/lib/comandos-voz";
 
 import { ListaAmostras } from "@/components/lista-amostras";
@@ -40,7 +59,6 @@ import {
   type Diagrama,
   type LinhaLegenda,
 } from "@/lib/legendas";
-
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   type Amostra,
@@ -53,11 +71,12 @@ import {
 } from "@/lib/amostras";
 import {
   transcribeAudio,
+} from "@/lib/transcribe.functions";
+import { normalizarDitado } from "@/lib/normalizar-ditado";
+import {
   optimizeReport,
-  splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { comSessao, garantirSessao } from "@/lib/sessao";
 import {
   getVocabularioPessoal,
   registarCorreccoes,
@@ -78,7 +97,7 @@ export const Route = createFileRoute("/_authenticated/app")({
       {
         property: "og:description",
         content:
-          "Ditado clínico, transcrição automática e arquivo privado de relatórios por utilizador.",
+          "Ditado clínico, transcrição automática e arquivo privado de relatórios por médico.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -93,6 +112,8 @@ type Relatorio = {
   titulo: string;
   texto: string;
   created_at: string;
+  updated_at: string;
+  expira_em: string | null;
   paciente_id: string | null;
   amostras: unknown;
   fragmentos: number;
@@ -100,6 +121,11 @@ type Relatorio = {
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
+};
+
+type ConfiguracaoRetencao = {
+  prazo_reter_dias: number;
+  base_prazo: "criacao" | "ultima_edicao";
 };
 
 
@@ -110,7 +136,6 @@ type Termo = {
   ocorrencias: number;
   origem: string;
 };
-
 
 const blobToBase64 = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
@@ -127,13 +152,24 @@ const blobToBase64 = (blob: Blob) =>
     reader.readAsDataURL(blob);
   });
 
+/** Calcula a data de expiração de um relatório com base na configuração do médico. */
+const calcularExpiraEm = (
+  config: ConfiguracaoRetencao,
+  createdAt: string,
+  updatedAt: string,
+) => {
+  const base =
+    config.base_prazo === "criacao" ? createdAt : updatedAt;
+  const data = new Date(base);
+  data.setDate(data.getDate() + config.prazo_reter_dias);
+  return data.toISOString();
+};
 
 function AppPage() {
   const navigate = useNavigate();
 
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
-  const separarIA = useServerFn(splitSamples);
   const carregarVocabulario = useServerFn(getVocabularioPessoal);
   const guardarCorreccoes = useServerFn(registarCorreccoes);
 
@@ -149,18 +185,6 @@ function AppPage() {
 
   const [numeroAnalise, setNumeroAnalise] = useState("");
 
-  useEffect(() => {
-    setAmostras((lista) => {
-      if (lista.length === 0 || lista[0]?.titulo === numeroAnalise) {
-        return lista;
-      }
-
-      return lista.map((a, i) =>
-        i === 0 ? { ...a, titulo: numeroAnalise } : a,
-      );
-    });
-  }, [numeroAnalise]);
-
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
   const [contexto, setContexto] =
@@ -169,6 +193,12 @@ function AppPage() {
   const [termos, setTermos] = useState<Termo[]>([]);
 
   const [aprendizagem, setAprendizagem] = useState(true);
+
+  const [configRetencao, setConfigRetencao] =
+    useState<ConfiguracaoRetencao>({
+      prazo_reter_dias: 90,
+      base_prazo: "ultima_edicao",
+    });
 
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
@@ -192,13 +222,11 @@ function AppPage() {
       lista.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     );
 
-
   const adicionarAmostra = () => {
     const nova = novaAmostra();
     setAmostras((lista) => [...lista, nova]);
     setActivaId(nova.id);
   };
-
 
   const removerAmostra = (id: string) =>
     setAmostras((lista) =>
@@ -206,7 +234,6 @@ function AppPage() {
         ? lista
         : lista.filter((a) => a.id !== id),
     );
-
 
   const moverAmostra = (id: string, direccao: -1 | 1) =>
     setAmostras((lista) => {
@@ -231,7 +258,6 @@ function AppPage() {
     "Serviço de Anatomia Patológica",
   );
 
-
   useEffect(() => {
     const guardado = localStorage.getItem("patologia-geral:modelo-docx");
 
@@ -252,7 +278,6 @@ function AppPage() {
     }
   }, []);
 
-
   useEffect(() => {
     localStorage.setItem(
       "patologia-geral:modelo-docx",
@@ -260,37 +285,39 @@ function AppPage() {
     );
   }, [template, instituicao, servico]);
 
+  useEffect(() => {
+    if (!texto.trim()) return;
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [texto]);
 
   const carregar = useCallback(async () => {
-    const sessao = await garantirSessao();
+    const [r, t, cfg, m] = await Promise.all([
+      supabase
+        .from("relatorios_transcritos")
+        .select(
+          "id, titulo, texto, created_at, updated_at, expira_em, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao, amostras",
+        )
+        .limit(0),
 
-    if (!sessao) {
-      toast.error(
-        "Sessão expirada. Volte a iniciar sessão.",
-      );
-      void navigate({ to: "/auth", replace: true });
-      return;
-    }
+      supabase
+        .from("termos_aprendidos")
+        .select(
+          "id, termo, correcao_de, ocorrencias, origem",
+        )
+        .eq("activo", true)
+        .order("ocorrencias", { ascending: false }),
 
-    const [r, t] = await Promise.all([
-      comSessao(() =>
-        supabase
-          .from("relatorios_transcritos")
-          .select(
-            "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
-          )
-          .order("created_at", { ascending: false }),
-      ),
+      supabase
+        .from("configuracoes_medico")
+        .select("prazo_reter_dias, base_prazo")
+        .maybeSingle(),
 
-      comSessao(() =>
-        supabase
-          .from("termos_aprendidos")
-          .select(
-            "id, termo, correcao_de, ocorrencias, origem",
-          )
-          .eq("activo", true)
-          .order("ocorrencias", { ascending: false }),
-      ),
+      supabase.auth.getUser(),
     ]);
 
 
@@ -302,23 +329,30 @@ function AppPage() {
       setTermos(t.data);
     }
 
-    const perfil = await comSessao(() =>
-      supabase
+    if (cfg.data) {
+      setConfigRetencao({
+        prazo_reter_dias: cfg.data.prazo_reter_dias,
+        base_prazo: cfg.data.base_prazo as
+          | "criacao"
+          | "ultima_edicao",
+      });
+    }
+
+    if (m.data.user) {
+      const perfil = await supabase
         .from("medicos")
         .select("aprendizagem_activa")
-        .eq("id", sessao.user.id)
-        .maybeSingle(),
-    );
+        .eq("id", m.data.user.id)
+        .maybeSingle();
 
-    setAprendizagem(
-      perfil.data?.aprendizagem_activa !== false,
-    );
-  }, [navigate]);
-
+      setAprendizagem(
+        perfil.data?.aprendizagem_activa !== false,
+      );
+    }
+  }, []);
 
   const actualizarContexto = useCallback(async () => {
     try {
-      await garantirSessao();
       setContexto(
         await carregarVocabulario({
           data: undefined,
@@ -329,34 +363,30 @@ function AppPage() {
     }
   }, [carregarVocabulario]);
 
-
   useEffect(() => {
     void carregar();
     void actualizarContexto();
   }, [carregar, actualizarContexto]);
 
-
   const alternarAprendizagem = async () => {
     const novaEstado = !aprendizagem;
 
-    const sessao = await garantirSessao();
+    const { data: sessao } =
+      await supabase.auth.getUser();
 
-    if (!sessao) {
+    if (!sessao.user) {
       toast.error(
         "Sessão expirada. Volte a iniciar sessão.",
       );
       return;
     }
 
-    const { error } = await comSessao(() =>
-      supabase
-        .from("medicos")
-        .update({
-          aprendizagem_activa: novaEstado,
-        })
-        .eq("id", sessao.user.id),
-    );
-
+    const { error } = await supabase
+      .from("medicos")
+      .update({
+        aprendizagem_activa: novaEstado,
+      })
+      .eq("id", sessao.user.id);
 
     if (error) {
       toast.error(
@@ -385,15 +415,46 @@ function AppPage() {
     );
   };
 
+  const guardarConfigRetencao = async (
+    novo: ConfiguracaoRetencao,
+  ) => {
+    const { data: sessao } =
+      await supabase.auth.getUser();
+
+    if (!sessao.user) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
+      return;
+    }
+
+    const { error } = await supabase
+      .from("configuracoes_medico")
+      .upsert(
+        {
+          medico_id: sessao.user.id,
+          prazo_reter_dias: novo.prazo_reter_dias,
+          base_prazo: novo.base_prazo,
+        },
+        { onConflict: "medico_id" },
+      );
+
+    if (error) {
+      toast.error(
+        "Não foi possível guardar as definições de retenção.",
+      );
+      return;
+    }
+
+    setConfigRetencao(novo);
+    toast.success("Definições de retenção guardadas.");
+  };
 
   const removerTermo = async (termo: Termo) => {
-    const { error } = await comSessao(() =>
-      supabase
-        .from("termos_aprendidos")
-        .update({ activo: false })
-        .eq("id", termo.id),
-    );
-
+    const { error } = await supabase
+      .from("termos_aprendidos")
+      .update({ activo: false })
+      .eq("id", termo.id);
 
     if (error) {
       toast.error(
@@ -415,7 +476,6 @@ function AppPage() {
     );
   };
 
-
   const handleAudio = async (
     blob: Blob,
     format: string,
@@ -426,9 +486,11 @@ function AppPage() {
       const audioBase64 =
         await blobToBase64(blob);
 
-      const sessao = await garantirSessao();
+      const { data: sessionData } =
+        await supabase.auth.getSession();
 
-      const accessToken = sessao?.access_token;
+      const accessToken =
+        sessionData.session?.access_token;
 
       if (!accessToken) {
         toast.error(
@@ -436,7 +498,6 @@ function AppPage() {
         );
         return;
       }
-
 
       const resultado = await transcrever({
         data: {
@@ -459,13 +520,22 @@ function AppPage() {
         },
       });
 
-
       if (!resultado.text) {
         toast.error(
           "Não foi possível obter texto deste áudio.",
         );
         return;
       }
+
+      // Remove a palavra de paragem final ("parar", "stop"…) do ditado.
+      const textoDitado = normalizarDitado(
+        resultado.text
+          .replace(
+            /[\s,.;:-]*\b(?:app[,\s]+)?(?:parar|para|p[aá]ra|stop|terminar|termina|fim d[eo] ditado)\s*[.!?]*\s*$/i,
+            "",
+          )
+          .trim() || resultado.text,
+      );
 
       // A amostra fixada quando a gravação começou tem prioridade.
       const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
@@ -478,8 +548,8 @@ function AppPage() {
 
       actualizarAmostra(alvo, {
         texto: destino.texto
-          ? `${destino.texto}\n\n${resultado.text}`
-          : resultado.text,
+          ? `${destino.texto}\n\n${textoDitado}`
+          : textoDitado,
       });
 
       setActivaId(alvo);
@@ -489,10 +559,9 @@ function AppPage() {
         "Transcrição concluída.",
       );
 
-      if (/\bamostra\b/i.test(resultado.text)) {
-        void separarAmostras(alvo, resultado.text, true);
+      if (/\bamostra\b/i.test(textoDitado)) {
+        void separarAmostras(alvo, textoDitado, true);
       }
-
 
     } catch (e) {
       toast.error(
@@ -504,7 +573,6 @@ function AppPage() {
       setATranscrever(false);
     }
   };
-
 
   const separarAmostras = async (
     id: string,
@@ -521,23 +589,7 @@ function AppPage() {
     setASeparar(true);
 
     try {
-      let blocos: { titulo: string; texto: string }[] = [];
-
-      try {
-        await garantirSessao();
-        const resultado = await separarIA({
-
-          data: { texto: conteudo },
-        });
-
-        blocos = resultado.amostras;
-      } catch {
-        blocos = [];
-      }
-
-      if (blocos.length === 0) {
-        blocos = separarAmostrasHeuristica(conteudo);
-      }
+      const blocos = separarAmostrasHeuristica(conteudo);
 
       if (blocos.length <= 1) {
         if (!automatico) {
@@ -567,7 +619,6 @@ function AppPage() {
           diagrama: i === 0 ? base.diagrama : null,
         }));
 
-
         return [
           ...lista.slice(0, indice),
           ...novas,
@@ -583,7 +634,6 @@ function AppPage() {
     }
   };
 
-
   const otimizarTexto = async () => {
     if (!texto.trim()) {
       toast.error(
@@ -595,10 +645,7 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
-      await garantirSessao();
-
       const revistas = await Promise.all(
-
         amostras.map(async (a) => {
           if (!a.texto.trim()) return a;
 
@@ -639,84 +686,12 @@ function AppPage() {
 
 
 
-
+  // Zero-retention: os relatórios não são guardados no servidor (RGPD).
   const guardar = async () => {
-    if (!texto.trim()) {
-      toast.error(
-        "Não há texto para guardar.",
-      );
-      return;
-    }
-
-    const sessao = await garantirSessao();
-
-    if (!sessao) {
-      toast.error(
-        "Sessão expirada. Volte a iniciar sessão.",
-      );
-      return;
-    }
-
-    const { error } = await comSessao(() =>
-      supabase
-        .from("relatorios_transcritos")
-        .insert({
-          medico_id: sessao.user.id,
-          paciente_id: null,
-
-          titulo:
-            numeroAnalise.trim() ||
-            `Relatório ${new Date().toLocaleDateString(
-              "pt-PT",
-            )}`,
-
-          texto,
-          amostras,
-          fragmentos: amostraActiva.resumo.fragmentos,
-          blocos: amostraActiva.resumo.blocos,
-          seccionado: amostraActiva.resumo.seccionado,
-          inclusao: amostraActiva.resumo.inclusao,
-          codigo_faturacao:
-            amostraActiva.resumo.codigoFaturacao,
-        }),
+    toast.info(
+      "Os relatórios não são guardados. Exporte ou copie o texto antes de fechar.",
     );
-
-
-    if (error) {
-      toast.error(
-        "Não foi possível guardar o relatório.",
-      );
-      return;
-    }
-
-    if (
-      aprendizagem &&
-      textoOtimizado &&
-      textoOtimizado !== texto
-    ) {
-      try {
-        await guardarCorreccoes({
-          data: {
-            antes: textoOtimizado,
-            depois: texto,
-          },
-        });
-      } catch {
-        // A aprendizagem é auxiliar:
-        // uma falha aqui não impede o arquivo.
-      }
-    }
-
-    toast.success(
-      "Relatório guardado na sua conta.",
-    );
-
-    setTextoOtimizado(null);
-
-    await carregar();
-    await actualizarContexto();
   };
-
 
   const abrirRelatorio = (r: Relatorio) => {
     const guardadas = Array.isArray(r.amostras)
@@ -735,16 +710,7 @@ function AppPage() {
             legenda: lerLegenda(a.legenda),
             diagrama: lerDiagrama(a.diagrama),
           }))
-
-        : [
-            novaAmostra("", r.texto, {
-              fragmentos: r.fragmentos ?? 0,
-              blocos: r.blocos ?? 0,
-              seccionado: r.seccionado ?? false,
-              inclusao: r.inclusao ?? "total",
-              codigoFaturacao: r.codigo_faturacao ?? "31057",
-            }),
-          ];
+        : [novaAmostra("", r.texto)];
 
     setAmostras(lista);
     setActivaId(lista[0]!.id);
@@ -763,17 +729,14 @@ function AppPage() {
     );
   };
 
-
   const apagar = async (
     id: string,
   ) => {
-    const { error } = await comSessao(() =>
-      supabase
+    const { error } =
+      await supabase
         .from("relatorios_transcritos")
         .delete()
-        .eq("id", id),
-    );
-
+        .eq("id", id);
 
     if (error) {
       toast.error(
@@ -789,6 +752,51 @@ function AppPage() {
     );
   };
 
+  /** Aprende as correções manuais feitas após a otimização (só termos, sem dados clínicos). */
+  const aprenderCorreccoes = async () => {
+    if (!aprendizagem || !textoOtimizado || textoOtimizado === texto) return;
+    const antes = textoOtimizado;
+    setTextoOtimizado(texto);
+    try {
+      const r = await guardarCorreccoes({ data: { antes, depois: texto } });
+      if (r.registados > 0) {
+        toast.success(`${r.registados} correção(ões) aprendida(s).`);
+        void carregar();
+        void actualizarContexto();
+      }
+    } catch {
+      /* silencioso */
+    }
+  };
+
+  const [novoTermo, setNovoTermo] = useState("");
+  const [novoDe, setNovoDe] = useState("");
+
+  const adicionarTermo = async () => {
+    const termo = novoTermo.trim();
+    const de = novoDe.trim();
+    if (!termo) return;
+    const { data: sessao } = await supabase.auth.getUser();
+    if (!sessao.user) {
+      toast.error("Sessão expirada. Volte a iniciar sessão.");
+      return;
+    }
+    const { error } = await supabase.from("termos_aprendidos").insert({
+      medico_id: sessao.user.id,
+      termo,
+      correcao_de: de || null,
+      origem: "manual",
+    });
+    if (error) {
+      toast.error("Não foi possível adicionar o termo.");
+      return;
+    }
+    setNovoTermo("");
+    setNovoDe("");
+    toast.success("Termo adicionado ao vocabulário.");
+    void carregar();
+    void actualizarContexto();
+  };
 
   const exportar = async () => {
     if (!texto.trim()) {
@@ -797,6 +805,9 @@ function AppPage() {
       );
       return;
     }
+
+    void aprenderCorreccoes();
+
 
     try {
       const { gerarRelatorioDocx } = await import(
@@ -854,6 +865,15 @@ function AppPage() {
       a.click();
 
       URL.revokeObjectURL(url);
+
+      const limpa = novaAmostra();
+      setAmostras([limpa]);
+      setActivaId(limpa.id);
+      setNumeroAnalise("");
+      setTextoOtimizado(null);
+      toast.success(
+        "Documento exportado. Campos limpos para a próxima análise.",
+      );
     } catch {
       toast.error(
         "Não foi possível gerar o documento Word.",
@@ -861,11 +881,13 @@ function AppPage() {
     }
   };
 
-
   const copiar = async () => {
     if (!texto.trim()) {
       return;
     }
+
+    void aprenderCorreccoes();
+
 
     await navigator.clipboard.writeText(
       texto,
@@ -876,7 +898,6 @@ function AppPage() {
     );
   };
 
-
   const sair = async () => {
     await supabase.auth.signOut();
 
@@ -885,26 +906,37 @@ function AppPage() {
     });
   };
 
-
   // ---------- COMANDOS POR VOZ ----------
 
   const recorderRef = useRef<RecorderHandle>(null);
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
   const [diagramaAberto, setDiagramaAberto] = useState(false);
-
   const [aGravar, setAGravar] = useState(false);
-
   /** Suspende a escuta de comandos (microfone reservado ao gravador). */
   const [vozSuspensa, setVozSuspensa] = useState(false);
   const aGravarRef = useRef(false);
   aGravarRef.current = aGravar;
 
+  /** Campo do resumo técnico a preencher por voz (modo guiado). */
+  const [campoResumo, setCampoResumo] = useState<CampoResumo | null>(null);
+  const campoResumoRef = useRef<CampoResumo | null>(null);
+  campoResumoRef.current = campoResumo;
+
+  const sairModoResumo = useCallback(() => {
+    campoResumoRef.current = null;
+    setCampoResumo(null);
+  }, []);
+
+  const irParaCampo = useCallback((campo: CampoResumo | null) => {
+    campoResumoRef.current = campo;
+    setCampoResumo(campo);
+    if (campo) toast.info(PERGUNTAS_RESUMO[campo].pergunta);
+  }, []);
 
   const tratarEstadoGravacao = useCallback((activa: boolean) => {
     setAGravar(activa);
     aGravarRef.current = activa;
-
     if (activa) {
       // Gravação iniciada pelo botão: fixa a amostra activa como destino.
       if (!alvoGravacaoRef.current) {
@@ -916,11 +948,30 @@ function AppPage() {
   }, []);
 
 
+
+  // Rede de segurança: Esc pára sempre a gravação.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!recorderRef.current?.aGravar()) return;
+      e.preventDefault();
+      recorderRef.current.parar();
+      setVozSuspensa(false);
+      toast.success("Gravação terminada.");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const [pendente, setPendente] = useState<{
     comando: Comando;
     descricao: string;
   } | null>(null);
 
+  const [sugestoes, setSugestoes] = useState<SugestaoComando[]>([]);
+  const ultimaFraseRef = useRef("");
+  const interimFeitoRef = useRef(false);
+  const falhasSeguidasRef = useRef(0);
 
   const accoesRef = useRef({
     otimizarTexto,
@@ -935,11 +986,10 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
-    setDiagramaAberto,
     amostras,
     amostraActiva,
+    setDiagramaAberto,
   });
-
   accoesRef.current = {
     otimizarTexto,
     guardar,
@@ -953,18 +1003,17 @@ function AppPage() {
     setNumeroAnalise,
     setAmostras,
     setActivaId,
-    setDiagramaAberto,
     amostras,
     amostraActiva,
+    setDiagramaAberto,
   };
-
 
   const descreverComando = (c: Comando) => {
     switch (c.tipo) {
       case "apagar-amostra":
         return "Apagar a amostra activa";
       case "novo-relatorio":
-        return "Limpar o relatório actual";
+        return "Começar nova análise (limpa a actual)";
       case "sair":
         return "Terminar sessão";
       default:
@@ -972,15 +1021,21 @@ function AppPage() {
     }
   };
 
-
   const executar = useCallback((c: Comando) => {
     const a = accoesRef.current;
 
     switch (c.tipo) {
-      case "analise":
+      case "analise": {
         a.setNumeroAnalise(c.valor);
-        toast.success(`N.º da análise: ${c.valor}`);
+        toast.success(`N.º da análise preenchido: ${c.valor}`);
+        const campo = document.getElementById("numero-analise");
+        if (campo) {
+          campo.scrollIntoView({ behavior: "smooth", block: "center" });
+          campo.classList.add("ring-2", "ring-clinical");
+          window.setTimeout(() => campo.classList.remove("ring-2", "ring-clinical"), 2000);
+        }
         break;
+      }
 
       case "iniciar-gravacao": {
         // Fixa a amostra destino antes de arrancar, e só anuncia
@@ -1008,20 +1063,19 @@ function AppPage() {
             return;
           }
 
-          toast.success("A gravar — diga \"App, parar\".");
+          // Escuta reactivada: o comando de paragem tem de continuar a funcionar.
+          setVozSuspensa(false);
+          toast.success("A gravar — diga \"Comando, parar\" (ou Esc).");
         })();
-
         break;
       }
 
       case "parar-gravacao": {
         const parou = recorderRef.current?.parar() ?? false;
         setVozSuspensa(false);
-
         toast[parou ? "success" : "info"](
           parou ? "Gravação terminada." : "Não havia gravação em curso.",
         );
-
         break;
       }
 
@@ -1031,26 +1085,21 @@ function AppPage() {
         toast.success("Nova amostra criada.");
         break;
 
-
       case "ir-amostra": {
         const alvo = a.amostras[c.indice - 1];
-
         if (!alvo) {
           toast.error(`Não existe a amostra ${c.indice}.`);
           break;
         }
-
         a.setActivaId(alvo.id);
         toast.success(`Amostra ${c.indice} activa.`);
         break;
       }
 
-
       case "apagar-amostra":
         a.removerAmostra(a.amostraActiva.id);
         toast.success("Amostra removida.");
         break;
-
 
       case "resumo":
         a.actualizarAmostra(a.amostraActiva.id, {
@@ -1058,7 +1107,6 @@ function AppPage() {
         });
         toast.success("Resumo técnico actualizado.");
         break;
-
 
       case "legenda-bloco": {
         const linhas: LinhaLegenda[] = aplicarLegenda(
@@ -1109,7 +1157,9 @@ function AppPage() {
         toast.success(c.aberto ? "Diagrama aberto." : "Diagrama fechado.");
         break;
 
-
+      case "resumo-guiado":
+        irParaCampo(CAMPOS_RESUMO[0]);
+        break;
 
       case "separar":
         void a.separarAmostras(
@@ -1118,65 +1168,206 @@ function AppPage() {
         );
         break;
 
-
       case "otimizar":
         void a.otimizarTexto();
         break;
-
 
       case "guardar":
         void a.guardar();
         break;
 
-
       case "exportar":
         void a.exportar();
         break;
-
 
       case "copiar":
         void a.copiar();
         break;
 
-
       case "novo-relatorio": {
         const nova = novaAmostra();
-
         a.setAmostras([nova]);
         a.setActivaId(nova.id);
         a.setNumeroAnalise("");
-
-        toast.success("Relatório limpo.");
+        toast.success("Nova análise — dite o número da análise.");
+        window.setTimeout(() => {
+          document
+            .getElementById("amostras-analise")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const campo = document.getElementById(`titulo-${nova.id}`);
+          if (campo instanceof HTMLInputElement) campo.focus({ preventScroll: true });
+        }, 100);
         break;
       }
-
 
       case "sair":
         void a.sair();
         break;
 
-
       default:
         break;
     }
-  }, []);
 
+    if (
+      c.tipo === "iniciar-gravacao" ||
+      c.tipo === "nova-amostra" ||
+      c.tipo === "ir-amostra" ||
+      c.tipo === "novo-relatorio"
+    ) {
+      sairModoResumo();
+    }
+  }, [irParaCampo, sairModoResumo]);
 
   const tratarFrase = useCallback(
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
-      if (!isFinal) return;
+      // Disparo imediato: comandos simples e inequívocos executam logo no
+      // resultado intermédio, sem esperar pela pausa do navegador.
+      if (!isFinal) {
+        if (interimFeitoRef.current || campoResumoRef.current) return;
+        if (aGravarRef.current) {
+          if (ehParagemDirecta(transcript)) {
+            interimFeitoRef.current = true;
+            executar({ tipo: "parar-gravacao" });
+          }
+          return;
+        }
+        const corpoI = extrairComando(transcript);
+        if (corpoI === null) return;
+        const cI = interpretarComando(corpoI);
+        if (cI && COMANDOS_IMEDIATOS.has(cI.tipo)) {
+          interimFeitoRef.current = true;
+          setSugestoes([]);
+          falhasSeguidasRef.current = 0;
+          executar(cI);
+        }
+        return;
+      }
+
+      if (interimFeitoRef.current) {
+        interimFeitoRef.current = false;
+        return;
+      }
+
+      ultimaFraseRef.current = transcript;
+
+      // Se há sugestões pendentes, "sim" confirma a primeira; "não" descarta.
+      if (sugestoes.length > 0) {
+        const t = transcript.toLowerCase().trim();
+        if (/^(sim|confirmar|yes|ok)$/.test(t)) {
+          const s = sugestoes[0];
+          if (s) {
+            setSugestoes([]);
+            falhasSeguidasRef.current = 0;
+            executar(s.comando);
+          }
+          return;
+        }
+        if (/^(nao|cancelar|não|nope)$/.test(t)) {
+          setSugestoes([]);
+          falhasSeguidasRef.current = 0;
+          toast.info("Sugestão ignorada. Diga \"Comando, ajuda\" para ver os comandos.");
+          return;
+        }
+      }
+
+      // Durante a gravação aceita-se "parar" sem a palavra de activação.
+      if (aGravarRef.current && ehParagemDirecta(transcript)) {
+        executar({ tipo: "parar-gravacao" });
+        return;
+      }
 
       const corpo = extrairComando(transcript);
-      if (corpo === null) return; // ditado normal
+
+      // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
+      const campo = campoResumoRef.current;
+      if (campo && !aGravarRef.current && corpo === null) {
+        const r = interpretarRespostaResumo(campo, transcript);
+        if (!r) {
+          toast.error(
+            `Não percebi. ${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+
+        const indice = CAMPOS_RESUMO.indexOf(campo);
+
+        if (r.tipo === "sair") {
+          sairModoResumo();
+          toast.info("Resumo técnico terminado.");
+          return;
+        }
+        if (r.tipo === "repetir") {
+          toast.info(
+            `${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+        if (r.tipo === "voltar") {
+          irParaCampo(CAMPOS_RESUMO[Math.max(0, indice - 1)] ?? campo);
+          return;
+        }
+
+        if (r.tipo === "valor") {
+          const a = accoesRef.current;
+          a.actualizarAmostra(a.amostraActiva.id, {
+            resumo: { ...a.amostraActiva.resumo, ...r.resumo },
+          });
+        }
+
+        const proximo = CAMPOS_RESUMO[indice + 1] ?? null;
+        if (proximo) {
+          irParaCampo(proximo);
+        } else {
+          sairModoResumo();
+          toast.success("Resumo técnico preenchido.");
+        }
+        return;
+      }
+
+      if (corpo === null) {
+        // Fora da gravação, comandos directos sem "App" (só não destrutivos).
+        if (aGravarRef.current) return; // ditado normal
+        const directo = interpretarComando(transcript);
+        if (
+          directo &&
+          (COMANDOS_IMEDIATOS.has(directo.tipo) || directo.tipo === "analise")
+        ) {
+          falhasSeguidasRef.current = 0;
+          setSugestoes([]);
+          executar(directo);
+        }
+        return;
+      }
 
       const comando = interpretarComando(corpo);
-
       if (!comando) {
         if (aGravarRef.current) return; // ditado em curso: ignorar ruído
 
+        const sugestoesOuvidas = sugerirComandos(corpo);
+        const primeira = sugestoesOuvidas[0];
+        if (primeira && primeira.score >= 0.9) {
+          falhasSeguidasRef.current = 0;
+          executar(primeira.comando);
+          return;
+        }
+        if (sugestoesOuvidas.some((s) => s.score >= 0.6)) {
+          setSugestoes(sugestoesOuvidas.filter((s) => s.score >= 0.6));
+          toast.info("Não percebi bem. Queria um destes comandos?");
+          return;
+        }
+
+        falhasSeguidasRef.current += 1;
         toast.error(`Comando não reconhecido: "${corpo}"`);
+        if (falhasSeguidasRef.current >= 2) {
+          setAjudaVoz(true);
+          toast.info("Abri a lista de comandos para ajudar.");
+          falhasSeguidasRef.current = 0;
+        }
         return;
       }
+
+      falhasSeguidasRef.current = 0;
+      setSugestoes([]);
 
       // Durante a gravação o microfone pertence ao ditado:
       // só se aceita parar.
@@ -1187,16 +1378,27 @@ function AppPage() {
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
+        setSugestoes([]);
+        falhasSeguidasRef.current = 0;
         return;
       }
 
+      if (comando.tipo === "repetir") {
+        if (ultimaFraseRef.current) {
+          toast.info(`Última frase ouvida: "${ultimaFraseRef.current}". Pode dizer de novo.`);
+        } else {
+          toast.info("Não há nenhuma frase para repetir.");
+        }
+        setSugestoes([]);
+        return;
+      }
 
       if (comando.tipo === "cancelar") {
         setPendente(null);
+        setSugestoes([]);
         toast.info("Acção cancelada.");
         return;
       }
-
 
       if (comando.tipo === "confirmar") {
         setPendente((p) => {
@@ -1204,31 +1406,25 @@ function AppPage() {
             toast.error("Não há nenhuma acção por confirmar.");
             return null;
           }
-
           executar(p.comando);
           return null;
         });
-
         return;
       }
-
 
       if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
         setPendente({
           comando,
           descricao: descreverComando(comando),
         });
-
         toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
         return;
       }
 
-
       executar(comando);
     },
-    [executar],
+    [executar, irParaCampo, sairModoResumo, sugestoes, setSugestoes, setAjudaVoz],
   );
-
 
   const {
     suportado: vozSuportada,
@@ -1246,6 +1442,7 @@ function AppPage() {
 
 
   const palavras = contarPalavras(texto);
+
 
 
   return (
@@ -1266,10 +1463,18 @@ function AppPage() {
             </p>
           </div>
 
+          <span
+            className="ml-auto hidden items-center gap-1.5 rounded-full border border-primary-foreground/30 px-3 py-1 text-xs text-primary-foreground sm:inline-flex"
+            title="Nenhum dado clínico ou identificação de doente é gravado nos servidores. O texto fica apenas na memória do seu computador até exportar ou fechar."
+          >
+            <ShieldCheck className="size-3.5" />
+            Conforme RGPD · Zero retenção
+          </span>
+
           <Button
             variant="secondary"
             size="sm"
-            className="ml-auto gap-2"
+            className="ml-auto gap-2 sm:ml-0"
             onClick={sair}
           >
             <LogOut className="size-4" />
@@ -1278,20 +1483,12 @@ function AppPage() {
         </div>
       </header>
 
-
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
 
           {/* COLUNA ESQUERDA */}
 
           <div className="space-y-6">
-
-            {/* ANÁLISE — colocada no topo */}
-            <CampoAnalise
-              valor={numeroAnalise}
-              onChange={setNumeroAnalise}
-            />
-
 
             <BarraComandosVoz
               activo={maosLivres}
@@ -1304,8 +1501,13 @@ function AppPage() {
               onAjudaChange={setAjudaVoz}
               aGravar={aGravar}
               vozSuspensa={vozSuspensa}
+              sugestoes={sugestoes}
+              onSugestao={(c) => {
+                setSugestoes([]);
+                falhasSeguidasRef.current = 0;
+                executar(c);
+              }}
             />
-
 
             <RecorderPanel
               ref={recorderRef}
@@ -1333,11 +1535,14 @@ function AppPage() {
               ) : (
                 <SplitSquareVertical className="size-4" />
               )}
-
               Separar amostras do ditado
             </Button>
 
 
+            <CampoAnalise
+              valor={numeroAnalise}
+              onChange={setNumeroAnalise}
+            />
 
             <ModeloDocumento
               template={template}
@@ -1347,7 +1552,6 @@ function AppPage() {
               onInstituicaoChange={setInstituicao}
               onServicoChange={setServico}
             />
-
 
             {/* VOCABULÁRIO APRENDIDO */}
 
@@ -1369,7 +1573,6 @@ function AppPage() {
                   </div>
                 </div>
 
-
                 <Button
                   type="button"
                   variant="outline"
@@ -1378,13 +1581,37 @@ function AppPage() {
                   onClick={alternarAprendizagem}
                 >
                   <Power className="size-4" />
-
                   {aprendizagem
                     ? "Desligar"
                     : "Ligar"}
                 </Button>
               </div>
 
+              {aprendizagem && (
+                <form
+                  className="space-y-2 rounded-md border border-border p-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void adicionarTermo();
+                  }}
+                >
+                  <Input
+                    value={novoTermo}
+                    onChange={(e) => setNovoTermo(e.target.value)}
+                    placeholder="Termo correto (ex.: queratoacantoma)"
+                    aria-label="Termo correto"
+                  />
+                  <Input
+                    value={novoDe}
+                    onChange={(e) => setNovoDe(e.target.value)}
+                    placeholder="Quando ouvir… (opcional)"
+                    aria-label="Quando ouvir"
+                  />
+                  <Button type="submit" size="sm" className="w-full" disabled={!novoTermo.trim()}>
+                    + Adicionar termo
+                  </Button>
+                </form>
+              )}
 
               {aprendizagem ? (
                 termos.length === 0 ? (
@@ -1422,7 +1649,6 @@ function AppPage() {
                           )}
                         </div>
 
-
                         <button
                           type="button"
                           onClick={() =>
@@ -1450,14 +1676,52 @@ function AppPage() {
                 </div>
               )}
             </section>
-          </div>
 
+            {/* PRIVACIDADE & RGPD */}
+            <section className="panel space-y-3 p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-clinical/20 text-clinical">
+                  <ShieldCheck className="size-5" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Privacidade &amp; RGPD
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Sessão efémera — zero retenção de dados clínicos.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">Processamento efémero:</strong>{" "}
+                  o áudio é apenas transcrito e otimizado, sem ficar armazenado.
+                </li>
+                <li>
+                  <strong className="text-foreground">Sem histórico no servidor:</strong>{" "}
+                  nenhum relatório ou dado de doente é gravado.
+                </li>
+                <li>
+                  <strong className="text-foreground">Só no seu computador:</strong>{" "}
+                  o texto desaparece ao fechar ou recarregar a página.
+                </li>
+                <li>
+                  <strong className="text-foreground">Vocabulário:</strong>{" "}
+                  guardam-se apenas termos médicos isolados, sem ligação a doentes.
+                </li>
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                O ficheiro Word exportado ou o texto copiado são a única cópia existente.
+              </p>
+            </section>
+
+          </div>
 
           {/* COLUNA DIREITA */}
 
           <div className="space-y-6">
 
-            <section className="flex flex-col gap-4">
+            <section id="amostras-analise" className="flex scroll-mt-6 flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
@@ -1475,9 +1739,10 @@ function AppPage() {
                 </span>
               </div>
 
-
               <ListaAmostras
                 amostras={amostras}
+                numeroAnalise={numeroAnalise}
+                onNumeroAnaliseChange={setNumeroAnalise}
                 activaId={amostraActiva.id}
                 onActivar={setActivaId}
                 onTituloChange={(id, titulo) =>
@@ -1489,19 +1754,19 @@ function AppPage() {
                 onResumoChange={(id, resumo) =>
                   actualizarAmostra(id, { resumo })
                 }
+                campoResumoActivo={campoResumo}
                 onLegendaChange={(id, legenda) =>
                   actualizarAmostra(id, { legenda })
                 }
                 onDiagramaChange={(id, diagrama) =>
                   actualizarAmostra(id, { diagrama })
                 }
+                diagramaAberto={diagramaAberto}
+                onDiagramaAbertoChange={setDiagramaAberto}
                 onAdicionar={adicionarAmostra}
                 onRemover={removerAmostra}
                 onMover={moverAmostra}
-                diagramaAberto={diagramaAberto}
-                onDiagramaAbertoChange={setDiagramaAberto}
               />
-
 
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -1524,16 +1789,6 @@ function AppPage() {
 
                 <Button
                   variant="outline"
-                  onClick={guardar}
-                  className="gap-2"
-                >
-                  <Save className="size-4" />
-                  Guardar relatório
-                </Button>
-
-
-                <Button
-                  variant="outline"
                   className="gap-2"
                   onClick={exportar}
                 >
@@ -1541,14 +1796,12 @@ function AppPage() {
                   Exportar Word (.docx)
                 </Button>
 
-
                 <ExportarHL7
                   numeroAnalise={numeroAnalise}
                   amostras={amostras}
                   instituicao={instituicao}
                   servico={servico}
                 />
-
 
                 <Button
                   variant="outline"
@@ -1560,13 +1813,11 @@ function AppPage() {
                   Copiar
                 </Button>
 
-
                 <Button
                   variant="outline"
                   className="gap-2"
                   onClick={() => {
                     const nova = novaAmostra();
-
                     setAmostras([nova]);
                     setActivaId(nova.id);
                   }}
@@ -1578,66 +1829,6 @@ function AppPage() {
               </div>
             </section>
 
-
-
-            <section className="panel p-6">
-              <h2 className="text-lg font-semibold text-foreground">
-                Os meus relatórios
-              </h2>
-
-              <p className="text-sm text-muted-foreground">
-                Visíveis apenas na sua conta.
-              </p>
-
-
-              <ul className="mt-4 space-y-2">
-                {relatorios.length === 0 && (
-                  <li className="text-sm text-muted-foreground">
-                    Ainda não guardou relatórios.
-                  </li>
-                )}
-
-
-                {relatorios.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center gap-3 rounded-md border border-border bg-secondary/50 px-3 py-2"
-                  >
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() =>
-                        abrirRelatorio(r)
-                      }
-                    >
-                      <span className="block truncate text-sm font-medium text-foreground">
-                        {r.titulo}
-                      </span>
-
-                      <span className="block text-xs text-muted-foreground">
-                        {new Date(
-                          r.created_at,
-                        ).toLocaleString(
-                          "pt-PT",
-                        )}
-                      </span>
-                    </button>
-
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        apagar(r.id)
-                      }
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Apagar relatório"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
           </div>
         </div>
       </main>
