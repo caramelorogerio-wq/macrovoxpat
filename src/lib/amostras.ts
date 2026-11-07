@@ -21,7 +21,7 @@ export type Amostra = {
 
 export const resumoVazio = (): ResumoAmostra => ({
   fragmentos: 0,
-  blocos: 0,
+  blocos: 1,
   seccionado: false,
   inclusao: "total",
   codigoFaturacao: "31057",
