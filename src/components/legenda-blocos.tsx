@@ -85,7 +85,7 @@ export function LegendaBlocos({
       `linha-${i}`,
       (frase) => {
         const r = interpretarLegendaDitada(frase);
-        const anterior = linhas[i].bloco;
+        const anterior = linhas[i]?.bloco ?? 1;
         const bloco = r?.blocos[0] ?? anterior;
         const descricao = r
           ? descricaoOriginal(frase, r.descricao)

@@ -504,3 +504,15 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
   { dizer: "App, ajuda", faz: "Mostra esta lista" },
 ];
+
+/**
+ * Interpreta uma frase ditada directamente no campo de legenda
+ * (sem palavra de activação): "bloco três margem distal".
+ */
+export function interpretarLegendaDitada(
+  frase: string,
+): { blocos: number[]; descricao: string } | null {
+  const c = interpretarComando(normalizar(frase));
+  if (c?.tipo === "legenda-bloco") return { blocos: c.blocos, descricao: c.descricao };
+  return null;
+}

@@ -9,7 +9,7 @@ export function useDitadoCurto() {
     (chave: string, onTexto: (texto: string) => void, onErro?: (m: string) => void) => {
       if (typeof window === "undefined") return;
       const w = window as unknown as Record<string, any>;
-      const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+      const Ctor = w["SpeechRecognition"] ?? w["webkitSpeechRecognition"];
       if (!Ctor) {
         onErro?.("Este navegador não suporta ditado por voz. Use o Edge ou o Chrome.");
         return;
